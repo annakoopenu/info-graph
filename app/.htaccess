@@ -1,0 +1,18 @@
+RewriteEngine On
+RewriteBase /info-graph/
+
+# ── Block direct access to non-public directories/files ──────
+RewriteRule ^src/         - [F,L]
+RewriteRule ^templates/   - [F,L]
+RewriteRule ^logs/        - [F,L]
+RewriteRule ^scripts/     - [F,L]
+RewriteRule ^tests/       - [F,L]
+RewriteRule ^backups/     - [F,L]
+RewriteRule ^\.env        - [F,L]
+RewriteRule ^schema\.sql  - [F,L]
+RewriteRule ^seed\.sql    - [F,L]
+
+# ── Front controller ─────────────────────────────────────────
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [L]

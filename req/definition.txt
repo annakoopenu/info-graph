@@ -1,0 +1,24 @@
+list of items
+- Name of Item
+- Name of Author
+- Link
+- Tags [] (music / painting / book / …)
+- Notes (free text)
+- Rating (INT 1-100)
+- Flags (enum) (Read later, Completed)
+
+* add item
+* remove item
+* edit item
+* import items from csv
+* download items as csv
+
+
+Views
+- List/Tiles/Metadata cloud
+- Item details
+- Edit item
+- Add item
+
+* Filters
+

@@ -1,0 +1,178 @@
+<?php
+/**
+ * Items list view — supports list / tiles / cloud modes.
+ * Variables: $items, $filters, $allTags, $allFlags
+ */
+$pageTitle = 'Items';
+$view = $_GET['view'] ?? 'list';
+if (!in_array($view, ['list', 'tiles', 'cloud'], true)) {
+    $view = 'list';
+}
+
+/** Build a URL that preserves current filters + sets a view mode. */
+function viewUrl(string $mode): string {
+    $params = $_GET;
+    $params['view'] = $mode;
+    return url('items') . '?' . http_build_query($params);
+}
+
+ob_start();
+?>
+
+<section class="filters">
+    <form method="get" action="<?= url('items') ?>" class="filter-form" id="filter-form">
+        <input type="hidden" name="view" value="<?= htmlspecialchars($view, ENT_QUOTES, 'UTF-8') ?>">
+        <input type="text"
+               name="search"
+               placeholder="Search name, author, notes…"
+               value="<?= htmlspecialchars($filters['search'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+
+        <select name="tag">
+            <option value="">All tags</option>
+            <?php foreach ($allTags as $t): ?>
+                <option value="<?= htmlspecialchars($t, ENT_QUOTES, 'UTF-8') ?>"
+                    <?= ($filters['tag'] ?? '') === $t ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($t, ENT_QUOTES, 'UTF-8') ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+
+        <select name="flag">
+            <option value="">All flags</option>
+            <?php foreach ($allFlags as $f): ?>
+                <option value="<?= htmlspecialchars($f, ENT_QUOTES, 'UTF-8') ?>"
+                    <?= ($filters['flag'] ?? '') === $f ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($f, ENT_QUOTES, 'UTF-8') ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+
+        <?php if (($filters['search'] ?? '') !== '' || ($filters['tag'] ?? '') !== '' || ($filters['flag'] ?? '') !== ''): ?>
+            <a href="<?= url('items') ?>?view=<?= $view ?>" class="btn-clear">Clear</a>
+        <?php endif; ?>
+    </form>
+</section>
+
+<script>
+(function() {
+    var form = document.getElementById('filter-form');
+    var searchInput = form.querySelector('input[name="search"]');
+    var selects = form.querySelectorAll('select');
+    var timer;
+
+    // Dropdowns submit immediately
+    for (var i = 0; i < selects.length; i++) {
+        selects[i].addEventListener('change', function() { form.submit(); });
+    }
+
+    // Search input submits after 400ms debounce
+    searchInput.addEventListener('input', function() {
+        clearTimeout(timer);
+        timer = setTimeout(function() { form.submit(); }, 400);
+    });
+})();
+</script>
+
+<!-- View switcher -->
+<div class="view-switcher">
+    <a href="<?= viewUrl('list') ?>"  class="vs-btn <?= $view === 'list'  ? 'vs-active' : '' ?>" title="List view">☰ List</a>
+    <a href="<?= viewUrl('tiles') ?>" class="vs-btn <?= $view === 'tiles' ? 'vs-active' : '' ?>" title="Tiles view">▦ Tiles</a>
+    <a href="<?= viewUrl('cloud') ?>" class="vs-btn <?= $view === 'cloud' ? 'vs-active' : '' ?>" title="Cloud view">◌ Cloud</a>
+    <span class="vs-count"><?= count($items) ?> item<?= count($items) !== 1 ? 's' : '' ?></span>
+</div>
+
+<?php if (empty($items)): ?>
+    <p class="empty-state">No items found. <a href="<?= url('items/new') ?>">Add one?</a></p>
+
+<?php elseif ($view === 'list'): ?>
+    <!-- ── LIST VIEW ──────────────────────────────────────────── -->
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Author</th>
+                <th>Tags</th>
+                <th>Rating</th>
+                <th>Flag</th>
+                <th>Updated</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($items as $item): ?>
+                <tr>
+                    <td>
+                        <a href="<?= url('items/' . (int) $item['id']) ?>">
+                            <?= htmlspecialchars($item['item_name'], ENT_QUOTES, 'UTF-8') ?>
+                        </a>
+                    </td>
+                    <td><?= htmlspecialchars($item['author_name'] ?? '', ENT_QUOTES, 'UTF-8') ?></td>
+                    <td>
+                        <?php if ($item['tags']): ?>
+                            <?php foreach (explode(', ', $item['tags']) as $tag): ?>
+                                <span class="tag"><?= htmlspecialchars($tag, ENT_QUOTES, 'UTF-8') ?></span>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </td>
+                    <td><?= $item['rating'] !== null ? (int) $item['rating'] : '—' ?></td>
+                    <td>
+                        <?php if ($item['flag']): ?>
+                            <span class="flag flag-<?= htmlspecialchars($item['flag'], ENT_QUOTES, 'UTF-8') ?>">
+                                <?= htmlspecialchars($item['flag'], ENT_QUOTES, 'UTF-8') ?>
+                            </span>
+                        <?php endif; ?>
+                    </td>
+                    <td><?= htmlspecialchars($item['updated_at'] ?? '', ENT_QUOTES, 'UTF-8') ?></td>
+                </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+
+<?php elseif ($view === 'tiles'): ?>
+    <!-- ── TILES VIEW ─────────────────────────────────────────── -->
+    <div class="tiles-grid">
+        <?php foreach ($items as $item): ?>
+            <a href="<?= url('items/' . (int) $item['id']) ?>" class="tile <?= $item['flag'] ? 'tile-' . htmlspecialchars($item['flag'], ENT_QUOTES, 'UTF-8') : '' ?>">
+                <div class="tile-name"><?= htmlspecialchars($item['item_name'], ENT_QUOTES, 'UTF-8') ?></div>
+                <div class="tile-author"><?= htmlspecialchars($item['author_name'] ?? '', ENT_QUOTES, 'UTF-8') ?></div>
+                <?php if ($item['rating'] !== null): ?>
+                    <div class="tile-rating">
+                        <span class="rating-bar" style="width: <?= (int) $item['rating'] ?>%"></span>
+                        <span class="rating-num"><?= (int) $item['rating'] ?></span>
+                    </div>
+                <?php endif; ?>
+                <div class="tile-tags">
+                    <?php if ($item['tags']): ?>
+                        <?php foreach (explode(', ', $item['tags']) as $tag): ?>
+                            <span class="tag"><?= htmlspecialchars($tag, ENT_QUOTES, 'UTF-8') ?></span>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+                <?php if ($item['flag']): ?>
+                    <span class="flag flag-<?= htmlspecialchars($item['flag'], ENT_QUOTES, 'UTF-8') ?> tile-flag">
+                        <?= htmlspecialchars($item['flag'], ENT_QUOTES, 'UTF-8') ?>
+                    </span>
+                <?php endif; ?>
+            </a>
+        <?php endforeach; ?>
+    </div>
+
+<?php elseif ($view === 'cloud'): ?>
+    <!-- ── CLOUD VIEW ─────────────────────────────────────────── -->
+    <div class="cloud-container" id="cloud-container">
+        <?php foreach ($items as $item): ?>
+            <a href="<?= url('items/' . (int) $item['id']) ?>"
+               class="cloud-dot <?= $item['flag'] ? 'dot-' . htmlspecialchars($item['flag'], ENT_QUOTES, 'UTF-8') : 'dot-none' ?>"
+               data-id="<?= (int) $item['id'] ?>"
+               data-rating="<?= $item['rating'] !== null ? (int) $item['rating'] : 50 ?>"
+               title="<?= htmlspecialchars($item['item_name'], ENT_QUOTES, 'UTF-8') ?> — <?= htmlspecialchars($item['author_name'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                <span class="dot-label"><?= htmlspecialchars($item['item_name'], ENT_QUOTES, 'UTF-8') ?></span>
+            </a>
+        <?php endforeach; ?>
+    </div>
+    <script src="<?= url('assets/cloud.js') ?>"></script>
+
+<?php endif; ?>
+
+<?php
+$content = ob_get_clean();
+require __DIR__ . '/../layout.php';

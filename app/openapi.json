@@ -1,0 +1,255 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Info-Graph",
+    "description": "Personal collection manager — list, create, update, delete items.",
+    "version": "2.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://niv-photos.com/info-graph"
+    }
+  ],
+  "paths": {
+    "/api/items": {
+      "get": {
+        "operationId": "listItems",
+        "summary": "List all items, optionally filtered by search text, tag, or flag",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Text search across item name, author, and notes"
+          },
+          {
+            "name": "tag",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Filter by exact tag name (e.g. painting, music, book)"
+          },
+          {
+            "name": "flag",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "enum": ["revisit", "completed"] },
+            "description": "Filter by flag value"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of items",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Item" }
+                    },
+                    "count": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createItem",
+        "summary": "Create a new item in the collection",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["item_name"],
+                "properties": {
+                  "item_name": {
+                    "type": "string",
+                    "description": "Name or title of the item (required)"
+                  },
+                  "author_name": {
+                    "type": "string",
+                    "description": "Author, artist, or creator name"
+                  },
+                  "link": {
+                    "type": "string",
+                    "description": "URL link (must be a valid URL)"
+                  },
+                  "tags": {
+                    "type": "string",
+                    "description": "Tags separated by semicolons, e.g. 'painting; renaissance'"
+                  },
+                  "notes": {
+                    "type": "string",
+                    "description": "Free-text notes about the item"
+                  },
+                  "rating": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "Rating from 1 to 100"
+                  },
+                  "flag": {
+                    "type": "string",
+                    "enum": ["revisit", "completed", ""],
+                    "description": "Status flag"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Item created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "item": { "$ref": "#/components/schemas/Item" },
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/items/{id}": {
+      "get": {
+        "operationId": "getItem",
+        "summary": "Get a single item by its ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "Item ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Item details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "item": { "$ref": "#/components/schemas/Item" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "updateItem",
+        "summary": "Update an existing item. Only include fields you want to change.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "Item ID to update"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "item_name": { "type": "string" },
+                  "author_name": { "type": "string" },
+                  "link": { "type": "string" },
+                  "tags": { "type": "string", "description": "Tags separated by semicolons" },
+                  "notes": { "type": "string" },
+                  "rating": { "type": "integer", "minimum": 1, "maximum": 100 },
+                  "flag": { "type": "string", "enum": ["revisit", "completed", ""] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Item updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "item": { "$ref": "#/components/schemas/Item" },
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/items/{id}/delete": {
+      "post": {
+        "operationId": "deleteItem",
+        "summary": "Delete an item by its ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "Item ID to delete"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Item deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "deleted_item": { "$ref": "#/components/schemas/Item" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Item": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "item_name": { "type": "string" },
+          "author_name": { "type": "string" },
+          "link": { "type": "string" },
+          "tags": { "type": "string" },
+          "notes": { "type": "string" },
+          "rating": { "type": "integer" },
+          "flag": { "type": "string" },
+          "created_at": { "type": "string" },
+          "updated_at": { "type": "string" }
+        }
+      }
+    }
+  }
+}
