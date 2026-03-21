@@ -2,190 +2,266 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../database.php';
+require_once __DIR__ . '/../config.php';
 
 class ItemRepository
 {
-    private PDO $db;
+    private string $dataFile;
 
-    public function __construct()
+    public function __construct(?string $dataFile = null)
     {
-        $this->db = getDbConnection();
+        $this->dataFile = $dataFile ?? dataFilePath();
     }
 
-    // ── List / filter ────────────────────────────────────────────
-
-    /**
-     * Return items with optional filters.
-     * Each item includes a `tags` key (comma-separated string).
-     */
     public function findAll(array $filters = []): array
     {
-        $where  = [];
-        $params = [];
+        $items = $this->loadItems();
 
         if (!empty($filters['search'])) {
-            $where[]  = '(i.item_name LIKE :search OR i.author_name LIKE :search2 OR i.notes LIKE :search3)';
-            $like     = '%' . $filters['search'] . '%';
-            $params['search']  = $like;
-            $params['search2'] = $like;
-            $params['search3'] = $like;
+            $needle = $this->lower(trim((string) $filters['search']));
+            $items = array_values(array_filter($items, function (array $item) use ($needle): bool {
+                $haystack = $this->lower(implode(' ', [
+                    $item['item_name'] ?? '',
+                    $item['author_name'] ?? '',
+                    $item['category'] ?? '',
+                    $item['tags'] ?? '',
+                    $item['notes'] ?? '',
+                ]));
+                return str_contains($haystack, $needle);
+            }));
         }
+
         if (!empty($filters['tag'])) {
-            $where[]  = 'EXISTS (SELECT 1 FROM item_tags it2 JOIN tags t2 ON t2.id = it2.tag_id WHERE it2.item_id = i.id AND t2.name = :tag)';
-            $params['tag'] = $filters['tag'];
+            $tagFilter = $this->lower(trim((string) $filters['tag']));
+            $items = array_values(array_filter($items, function (array $item) use ($tagFilter): bool {
+                foreach ($this->tagsAsArray($item['tags'] ?? '') as $tag) {
+                    if ($this->lower($tag) === $tagFilter) {
+                        return true;
+                    }
+                }
+                return false;
+            }));
         }
+
         if (!empty($filters['flag'])) {
-            $where[]  = 'i.flag = :flag';
-            $params['flag'] = $filters['flag'];
+            $flagFilter = trim((string) $filters['flag']);
+            $items = array_values(array_filter($items, fn(array $item): bool => ($item['flag'] ?? '') === $flagFilter));
         }
 
-        $sql = "SELECT i.*,
-                       GROUP_CONCAT(t.name ORDER BY t.name SEPARATOR ', ') AS tags
-                FROM items i
-                LEFT JOIN item_tags it ON it.item_id = i.id
-                LEFT JOIN tags t       ON t.id = it.tag_id";
-        if ($where) {
-            $sql .= ' WHERE ' . implode(' AND ', $where);
-        }
-        $sql .= ' GROUP BY i.id ORDER BY i.updated_at DESC';
-
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
-        return $stmt->fetchAll();
+        return $items;
     }
-
-    // ── Single item ──────────────────────────────────────────────
 
     public function findById(int $id): ?array
     {
-        $stmt = $this->db->prepare(
-            "SELECT i.*,
-                    GROUP_CONCAT(t.name ORDER BY t.name SEPARATOR ', ') AS tags
-             FROM items i
-             LEFT JOIN item_tags it ON it.item_id = i.id
-             LEFT JOIN tags t       ON t.id = it.tag_id
-             WHERE i.id = :id
-             GROUP BY i.id"
-        );
-        $stmt->execute(['id' => $id]);
-        $row = $stmt->fetch();
-        return $row ?: null;
-    }
+        foreach ($this->loadItems() as $item) {
+            if ((int) $item['id'] === $id) {
+                return $item;
+            }
+        }
 
-    // ── Create ───────────────────────────────────────────────────
+        return null;
+    }
 
     public function create(array $data): int
     {
-        $this->db->beginTransaction();
-        try {
-            $stmt = $this->db->prepare(
-                "INSERT INTO items (item_name, author_name, link, notes, rating, flag)
-                 VALUES (:item_name, :author_name, :link, :notes, :rating, :flag)"
-            );
-            $stmt->execute([
-                'item_name'   => $data['item_name'],
-                'author_name' => $data['author_name'] ?? '',
-                'link'        => $data['link'] ?: null,
-                'notes'       => $data['notes'] ?: null,
-                'rating'      => $data['rating'] !== '' ? (int) $data['rating'] : null,
-                'flag'        => $data['flag'] ?: null,
-            ]);
-            $itemId = (int) $this->db->lastInsertId();
+        $records = $this->loadRawRecords();
+        $items = $this->normalizeRecords($records);
+        $nextId = 1;
 
-            $this->syncTags($itemId, $data['tags'] ?? '');
-
-            $this->db->commit();
-            return $itemId;
-        } catch (\Throwable $e) {
-            $this->db->rollBack();
-            throw $e;
+        foreach ($items as $item) {
+            $nextId = max($nextId, (int) $item['id'] + 1);
         }
-    }
 
-    // ── Update ───────────────────────────────────────────────────
+        $timestamp = date('c');
+        $records[] = $this->normalizeForStorage($data, [
+            'id' => $nextId,
+            'created_at' => $timestamp,
+            'updated_at' => $timestamp,
+        ]);
+        $this->saveRecords($records);
+
+        return $nextId;
+    }
 
     public function update(int $id, array $data): void
     {
-        $this->db->beginTransaction();
-        try {
-            $stmt = $this->db->prepare(
-                "UPDATE items
-                 SET item_name   = :item_name,
-                     author_name = :author_name,
-                     link        = :link,
-                     notes       = :notes,
-                     rating      = :rating,
-                     flag        = :flag
-                 WHERE id = :id"
-            );
-            $stmt->execute([
-                'id'          => $id,
-                'item_name'   => $data['item_name'],
-                'author_name' => $data['author_name'] ?? '',
-                'link'        => $data['link'] ?: null,
-                'notes'       => $data['notes'] ?: null,
-                'rating'      => $data['rating'] !== '' ? (int) $data['rating'] : null,
-                'flag'        => $data['flag'] ?: null,
+        $records = $this->loadRawRecords();
+        $found = false;
+
+        foreach ($records as $index => $record) {
+            $recordId = isset($record['id']) ? (int) $record['id'] : ($index + 1);
+            if ($recordId !== $id) {
+                continue;
+            }
+
+            $existing = $this->normalizeRecord($record, $recordId);
+            $records[$index] = $this->normalizeForStorage($data, [
+                'id' => $id,
+                'created_at' => $existing['created_at'] ?: date('c'),
+                'updated_at' => date('c'),
             ]);
-
-            $this->syncTags($id, $data['tags'] ?? '');
-
-            $this->db->commit();
-        } catch (\Throwable $e) {
-            $this->db->rollBack();
-            throw $e;
+            $found = true;
+            break;
         }
-    }
 
-    // ── Delete ───────────────────────────────────────────────────
+        if (!$found) {
+            throw new RuntimeException('Item not found.');
+        }
+
+        $this->saveRecords($records);
+    }
 
     public function delete(int $id): void
     {
-        $stmt = $this->db->prepare("DELETE FROM items WHERE id = :id");
-        $stmt->execute(['id' => $id]);
-    }
+        $records = $this->loadRawRecords();
+        $filtered = [];
 
-    // ── Tag helpers ──────────────────────────────────────────────
-
-    /**
-     * Replace all tags for an item.
-     * $tagsString: comma or semicolon-separated tag names.
-     */
-    private function syncTags(int $itemId, string $tagsString): void
-    {
-        // Remove existing
-        $this->db->prepare("DELETE FROM item_tags WHERE item_id = :id")->execute(['id' => $itemId]);
-
-        $names = array_unique(array_filter(array_map('trim', preg_split('/[;,]+/', $tagsString))));
-        if (empty($names)) {
-            return;
+        foreach ($records as $index => $record) {
+            $recordId = isset($record['id']) ? (int) $record['id'] : ($index + 1);
+            if ($recordId !== $id) {
+                $filtered[] = $record;
+            }
         }
 
-        foreach ($names as $name) {
-            // Upsert tag
-            $this->db->prepare("INSERT IGNORE INTO tags (name) VALUES (:name)")->execute(['name' => $name]);
-            $tagId = $this->db->prepare("SELECT id FROM tags WHERE name = :name");
-            $tagId->execute(['name' => $name]);
-            $tid = (int) $tagId->fetchColumn();
-
-            $this->db->prepare("INSERT INTO item_tags (item_id, tag_id) VALUES (:iid, :tid)")
-                     ->execute(['iid' => $itemId, 'tid' => $tid]);
-        }
+        $this->saveRecords($filtered);
     }
 
-    // ── Utility ──────────────────────────────────────────────────
-
-    /** Return all distinct tag names (for filter dropdowns). */
     public function allTags(): array
     {
-        return $this->db->query("SELECT name FROM tags ORDER BY name")->fetchAll(PDO::FETCH_COLUMN);
+        $tags = [];
+        foreach ($this->loadItems() as $item) {
+            foreach ($this->tagsAsArray($item['tags'] ?? '') as $tag) {
+                $tags[$this->lower($tag)] = $tag;
+            }
+        }
+
+        natcasesort($tags);
+        return array_values($tags);
     }
 
-    /** Return all distinct flag values currently in use. */
     public function allFlags(): array
     {
-        return $this->db->query("SELECT DISTINCT flag FROM items WHERE flag IS NOT NULL AND flag != '' ORDER BY flag")
-                        ->fetchAll(PDO::FETCH_COLUMN);
+        $flags = [];
+        foreach ($this->loadItems() as $item) {
+            $flag = trim((string) ($item['flag'] ?? ''));
+            if ($flag !== '') {
+                $flags[$flag] = $flag;
+            }
+        }
+
+        natcasesort($flags);
+        return array_values($flags);
+    }
+
+    private function loadItems(): array
+    {
+        return $this->normalizeRecords($this->loadRawRecords());
+    }
+
+    private function loadRawRecords(): array
+    {
+        if (!is_file($this->dataFile)) {
+            return [];
+        }
+
+        $json = file_get_contents($this->dataFile);
+        if ($json === false || trim($json) === '') {
+            return [];
+        }
+
+        $data = json_decode($json, true);
+        if (!is_array($data)) {
+            throw new RuntimeException('Invalid JSON in data file: ' . $this->dataFile);
+        }
+
+        return array_values(array_filter($data, 'is_array'));
+    }
+
+    private function normalizeRecords(array $records): array
+    {
+        $items = [];
+        foreach ($records as $index => $record) {
+            $items[] = $this->normalizeRecord($record, isset($record['id']) ? (int) $record['id'] : ($index + 1));
+        }
+        return $items;
+    }
+
+    private function normalizeRecord(array $record, int $id): array
+    {
+        $rating = $record['rating'] ?? null;
+        $rating = ($rating === '' || $rating === null) ? null : (int) round((float) $rating);
+
+        return [
+            'id' => $id,
+            'item_name' => trim((string) ($record['item_name'] ?? '')),
+            'author_name' => trim((string) ($record['author_name'] ?? '')),
+            'category' => trim((string) ($record['category'] ?? '')),
+            'link' => trim((string) ($record['link'] ?? '')),
+            'link_image' => trim((string) ($record['link_image'] ?? '')),
+            'tags' => $this->normalizeTags((string) ($record['tags'] ?? '')),
+            'notes' => trim((string) ($record['notes'] ?? '')),
+            'rating' => $rating,
+            'flag' => trim((string) ($record['flag'] ?? '')),
+            'created_at' => trim((string) ($record['created_at'] ?? '')),
+            'updated_at' => trim((string) ($record['updated_at'] ?? '')),
+        ];
+    }
+
+    private function normalizeForStorage(array $data, array $overrides = []): array
+    {
+        $item = [
+            'id' => $overrides['id'] ?? ($data['id'] ?? null),
+            'item_name' => trim((string) ($data['item_name'] ?? '')),
+            'author_name' => trim((string) ($data['author_name'] ?? '')),
+            'category' => trim((string) ($data['category'] ?? '')),
+            'link' => trim((string) ($data['link'] ?? '')),
+            'tags' => $this->normalizeTags((string) ($data['tags'] ?? '')),
+            'notes' => trim((string) ($data['notes'] ?? '')),
+            'rating' => ($data['rating'] ?? '') === '' ? null : (int) round((float) $data['rating']),
+            'flag' => trim((string) ($data['flag'] ?? '')),
+            'link_image' => trim((string) ($data['link_image'] ?? '')),
+            'created_at' => $overrides['created_at'] ?? trim((string) ($data['created_at'] ?? '')),
+            'updated_at' => $overrides['updated_at'] ?? trim((string) ($data['updated_at'] ?? '')),
+        ];
+
+        return array_filter($item, static fn($value): bool => $value !== '');
+    }
+
+    private function saveRecords(array $records): void
+    {
+        $json = json_encode(array_values($records), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($json === false) {
+            throw new RuntimeException('Failed to encode JSON data.');
+        }
+
+        file_put_contents($this->dataFile, $json . "\n", LOCK_EX);
+    }
+
+    private function normalizeTags(string $tags): string
+    {
+        return implode('; ', $this->tagsAsArray($tags));
+    }
+
+    private function tagsAsArray(string $tags): array
+    {
+        $result = [];
+        foreach (preg_split('/[;,]+/', $tags) as $tag) {
+            $tag = trim($tag);
+            if ($tag === '') {
+                continue;
+            }
+            $result[$this->lower($tag)] = $tag;
+        }
+
+        return array_values($result);
+    }
+
+    private function lower(string $value): string
+    {
+        if (function_exists('mb_strtolower')) {
+            return mb_strtolower($value);
+        }
+
+        return strtolower($value);
     }
 }

@@ -9,7 +9,6 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../src/config.php';
-require_once __DIR__ . '/../src/database.php';
 require_once __DIR__ . '/../src/Services/CsvService.php';
 
 $pass = 0;
@@ -36,7 +35,7 @@ $csv = new CsvService();
 
 // ── Test 1: Valid CSV ────────────────────────────────────────────
 $tmp = tempnam(sys_get_temp_dir(), 'csv');
-file_put_contents($tmp, "item_name,author_name,link,tags,notes,rating,flag\n\"Test Item\",\"Author A\",\"https://example.com\",\"music; rock\",\"Some notes\",85,revisit\n");
+file_put_contents($tmp, "item_name,author_name,category,link,tags,notes,rating,flag,link_image\n\"Test Item\",\"Author A\",\"music\",\"https://example.com\",\"music; rock\",\"Some notes\",85,revisit,\"https://example.com/image.jpg\"\n");
 $result = $csv->parseFile($tmp);
 unlink($tmp);
 
@@ -45,11 +44,12 @@ assert_eq('Valid CSV: no errors', 0, count($result['errors']));
 assert_eq('Valid CSV: item_name', 'Test Item', $result['rows'][0]['item_name']);
 assert_eq('Valid CSV: tags', 'music; rock', $result['rows'][0]['tags']);
 assert_eq('Valid CSV: rating', '85', $result['rows'][0]['rating']);
+assert_eq('Valid CSV: image link', 'https://example.com/image.jpg', $result['rows'][0]['link_image']);
 assert_eq('Valid CSV: action is create', 'create', $result['rows'][0]['_action']);
 
 // ── Test 2: Row with id → update action ─────────────────────────
 $tmp = tempnam(sys_get_temp_dir(), 'csv');
-file_put_contents($tmp, "id,item_name,author_name,rating\n42,Updated Item,Author B,50\n");
+file_put_contents($tmp, "id,item_name,author_name,category,rating\n42,Updated Item,Author B,book,50\n");
 $result = $csv->parseFile($tmp);
 unlink($tmp);
 
@@ -85,7 +85,7 @@ assert_eq('Empty rating: no errors', 0, count($result['errors']));
 
 // ── Test 6: Invalid URL ─────────────────────────────────────────
 $tmp = tempnam(sys_get_temp_dir(), 'csv');
-file_put_contents($tmp, "item_name,link\nItem Z,not-a-url\n");
+file_put_contents($tmp, "item_name,link,link_image\nItem Z,not-a-url,still-not-a-url\n");
 $result = $csv->parseFile($tmp);
 unlink($tmp);
 
@@ -122,8 +122,8 @@ $output = preg_replace('/^\xEF\xBB\xBF/', '', $output);
 $lines = explode("\n", trim($output));
 $header = str_getcsv($lines[0]);
 
-assert_eq('Export: header starts with item_name', 'item_name', $header[0]);
-assert_true('Export: has 7 columns', count($header) === 7);
+assert_eq('Export: header starts with id', 'id', $header[0]);
+assert_true('Export: has 10 columns', count($header) === 10);
 
 // ── Summary ─────────────────────────────────────────────────────
 echo "\n=== Results: $pass passed, $fail failed ===\n";

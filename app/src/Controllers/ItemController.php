@@ -51,7 +51,7 @@ class ItemController
 
     public function create(array $params): void
     {
-        $item   = ['item_name' => '', 'author_name' => '', 'link' => '', 'tags' => '', 'notes' => '', 'rating' => '', 'flag' => ''];
+        $item   = ['item_name' => '', 'author_name' => '', 'category' => '', 'link' => '', 'link_image' => '', 'tags' => '', 'notes' => '', 'rating' => '', 'flag' => ''];
         $errors = [];
         require __DIR__ . '/../../templates/items/form.php';
     }
@@ -147,6 +147,10 @@ class ItemController
             $errors['link'] = 'Link must be a valid URL.';
         }
 
+        if (!empty($data['link_image']) && !filter_var($data['link_image'], FILTER_VALIDATE_URL)) {
+            $errors['link_image'] = 'Image link must be a valid URL.';
+        }
+
         return $errors;
     }
 
@@ -155,7 +159,9 @@ class ItemController
         return [
             'item_name'   => trim($post['item_name'] ?? ''),
             'author_name' => trim($post['author_name'] ?? ''),
+            'category'    => trim($post['category'] ?? ''),
             'link'        => trim($post['link'] ?? ''),
+            'link_image'  => trim($post['link_image'] ?? ''),
             'tags'        => trim($post['tags'] ?? ''),
             'notes'       => trim($post['notes'] ?? ''),
             'rating'      => trim($post['rating'] ?? ''),

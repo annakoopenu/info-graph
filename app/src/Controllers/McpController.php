@@ -85,7 +85,7 @@ class McpController
         $this->tools = [
 
             'items.list' => [
-                'description' => 'List items with optional filters (search, tag, flag).',
+                'description' => 'List items from the JSON dataset with optional filters (search, tag, flag).',
                 'inputSchema' => [
                     'type'       => 'object',
                     'properties' => [
@@ -128,7 +128,9 @@ class McpController
                     'properties' => [
                         'item_name'   => ['type' => 'string', 'description' => 'Name/title of the item (required).'],
                         'author_name' => ['type' => 'string', 'description' => 'Author name.'],
+                        'category'    => ['type' => 'string', 'description' => 'Optional item category.'],
                         'link'        => ['type' => 'string', 'description' => 'URL link.'],
+                        'link_image'  => ['type' => 'string', 'description' => 'Image URL shown in the UI.'],
                         'tags'        => ['type' => 'string', 'description' => 'Tags separated by semicolons or commas.'],
                         'notes'       => ['type' => 'string', 'description' => 'Free-text notes.'],
                         'rating'      => ['type' => 'integer', 'description' => 'Rating 1–100.'],
@@ -152,7 +154,9 @@ class McpController
                         'id'          => ['type' => 'integer', 'description' => 'Item ID (required).'],
                         'item_name'   => ['type' => 'string'],
                         'author_name' => ['type' => 'string'],
+                        'category'    => ['type' => 'string'],
                         'link'        => ['type' => 'string'],
+                        'link_image'  => ['type' => 'string'],
                         'tags'        => ['type' => 'string'],
                         'notes'       => ['type' => 'string'],
                         'rating'      => ['type' => 'integer'],
@@ -170,7 +174,9 @@ class McpController
                     $merged = [
                         'item_name'   => $args['item_name']   ?? $item['item_name'],
                         'author_name' => $args['author_name'] ?? $item['author_name'],
+                        'category'    => $args['category']    ?? ($item['category'] ?? ''),
                         'link'        => $args['link']        ?? $item['link'] ?? '',
+                        'link_image'  => $args['link_image']  ?? $item['link_image'] ?? '',
                         'tags'        => $args['tags']         ?? $item['tags'] ?? '',
                         'notes'       => $args['notes']       ?? $item['notes'] ?? '',
                         'rating'      => array_key_exists('rating', $args) ? (string) $args['rating'] : (string) ($item['rating'] ?? ''),
@@ -237,6 +243,9 @@ class McpController
         if (!empty($data['link']) && !filter_var($data['link'], FILTER_VALIDATE_URL)) {
             throw new \InvalidArgumentException('link must be a valid URL.');
         }
+        if (!empty($data['link_image']) && !filter_var($data['link_image'], FILTER_VALIDATE_URL)) {
+            throw new \InvalidArgumentException('link_image must be a valid URL.');
+        }
     }
 
     private function normalizeItemData(array $args): array
@@ -244,7 +253,9 @@ class McpController
         return [
             'item_name'   => trim($args['item_name'] ?? ''),
             'author_name' => trim($args['author_name'] ?? ''),
+            'category'    => trim($args['category'] ?? ''),
             'link'        => trim($args['link'] ?? ''),
+            'link_image'  => trim($args['link_image'] ?? ''),
             'tags'        => trim($args['tags'] ?? ''),
             'notes'       => trim($args['notes'] ?? ''),
             'rating'      => isset($args['rating']) ? (string) $args['rating'] : '',

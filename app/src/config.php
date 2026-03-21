@@ -53,3 +53,15 @@ function url(string $path = '/'): string
     }
     return $base . '/' . ltrim($path, '/');
 }
+
+function dataFilePath(): string
+{
+    $path = env('APP_DATA_FILE', __DIR__ . '/../info_graph_47_rows.json');
+    if ($path === '') {
+        return __DIR__ . '/../info_graph_47_rows.json';
+    }
+    if ($path[0] === '/') {
+        return $path;
+    }
+    return dirname(__DIR__) . '/' . ltrim($path, '/');
+}

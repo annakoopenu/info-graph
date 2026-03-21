@@ -30,6 +30,13 @@ ob_start();
                value="<?= htmlspecialchars($item['author_name'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
     </div>
 
+    <div class="form-group">
+        <label for="category">Category</label>
+        <input type="text" id="category" name="category"
+               value="<?= htmlspecialchars($item['category'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+               placeholder="music, book, art, film">
+    </div>
+
     <div class="form-group <?= isset($errors['link']) ? 'has-error' : '' ?>">
         <label for="link">Link</label>
         <input type="url" id="link" name="link"
@@ -37,6 +44,16 @@ ob_start();
                placeholder="https://…">
         <?php if (isset($errors['link'])): ?>
             <span class="error"><?= htmlspecialchars($errors['link'], ENT_QUOTES, 'UTF-8') ?></span>
+        <?php endif; ?>
+    </div>
+
+    <div class="form-group <?= isset($errors['link_image']) ? 'has-error' : '' ?>">
+        <label for="link_image">Image Link</label>
+        <input type="url" id="link_image" name="link_image"
+               value="<?= htmlspecialchars($item['link_image'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+               placeholder="https://…">
+        <?php if (isset($errors['link_image'])): ?>
+            <span class="error"><?= htmlspecialchars($errors['link_image'], ENT_QUOTES, 'UTF-8') ?></span>
         <?php endif; ?>
     </div>
 

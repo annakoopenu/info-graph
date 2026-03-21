@@ -78,7 +78,9 @@ class ApiController
         $merged = [
             'item_name'   => $body['item_name']   ?? $item['item_name'],
             'author_name' => $body['author_name'] ?? $item['author_name'],
+            'category'    => $body['category']    ?? ($item['category'] ?? ''),
             'link'        => $body['link']        ?? ($item['link'] ?? ''),
+            'link_image'  => $body['link_image']  ?? ($item['link_image'] ?? ''),
             'tags'        => $body['tags']        ?? ($item['tags'] ?? ''),
             'notes'       => $body['notes']       ?? ($item['notes'] ?? ''),
             'rating'      => array_key_exists('rating', $body) ? (string) $body['rating'] : (string) ($item['rating'] ?? ''),
@@ -136,6 +138,9 @@ class ApiController
         if (!empty($data['link']) && !filter_var($data['link'], FILTER_VALIDATE_URL)) {
             $errors[] = 'link must be a valid URL';
         }
+        if (!empty($data['link_image']) && !filter_var($data['link_image'], FILTER_VALIDATE_URL)) {
+            $errors[] = 'link_image must be a valid URL';
+        }
         return $errors;
     }
 
@@ -144,7 +149,9 @@ class ApiController
         return [
             'item_name'   => trim($body['item_name'] ?? ''),
             'author_name' => trim($body['author_name'] ?? ''),
+            'category'    => trim($body['category'] ?? ''),
             'link'        => trim($body['link'] ?? ''),
+            'link_image'  => trim($body['link_image'] ?? ''),
             'tags'        => trim($body['tags'] ?? ''),
             'notes'       => trim($body['notes'] ?? ''),
             'rating'      => isset($body['rating']) ? (string) $body['rating'] : '',

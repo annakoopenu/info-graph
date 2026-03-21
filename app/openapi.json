@@ -77,9 +77,17 @@
                     "type": "string",
                     "description": "Author, artist, or creator name"
                   },
+                  "category": {
+                    "type": "string",
+                    "description": "Optional item category such as music, film, or book"
+                  },
                   "link": {
                     "type": "string",
                     "description": "URL link (must be a valid URL)"
+                  },
+                  "link_image": {
+                    "type": "string",
+                    "description": "Image URL shown in the UI"
                   },
                   "tags": {
                     "type": "string",
@@ -173,7 +181,9 @@
                 "properties": {
                   "item_name": { "type": "string" },
                   "author_name": { "type": "string" },
+                  "category": { "type": "string" },
                   "link": { "type": "string" },
+                  "link_image": { "type": "string" },
                   "tags": { "type": "string", "description": "Tags separated by semicolons" },
                   "notes": { "type": "string" },
                   "rating": { "type": "integer", "minimum": 1, "maximum": 100 },
@@ -241,7 +251,9 @@
           "id": { "type": "integer" },
           "item_name": { "type": "string" },
           "author_name": { "type": "string" },
+          "category": { "type": "string" },
           "link": { "type": "string" },
+          "link_image": { "type": "string" },
           "tags": { "type": "string" },
           "notes": { "type": "string" },
           "rating": { "type": "integer" },

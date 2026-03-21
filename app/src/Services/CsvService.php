@@ -9,7 +9,7 @@ class CsvService
     private ItemRepository $repo;
 
     /** Canonical column order for export. */
-    private const COLUMNS = ['item_name', 'author_name', 'link', 'tags', 'notes', 'rating', 'flag'];
+    private const COLUMNS = ['id', 'item_name', 'author_name', 'category', 'link', 'tags', 'notes', 'rating', 'flag', 'link_image'];
 
     public function __construct()
     {
@@ -31,14 +31,16 @@ class CsvService
 
         foreach ($items as $item) {
             fputcsv($stream, [
+                $item['id'] ?? '',
                 $item['item_name'],
                 $item['author_name'] ?? '',
+                $item['category'] ?? '',
                 $item['link'] ?? '',
-                // Tags come as "a, b" from GROUP_CONCAT — convert to "a; b" for CSV
-                str_replace(', ', '; ', $item['tags'] ?? ''),
+                $item['tags'] ?? '',
                 $item['notes'] ?? '',
                 $item['rating'] ?? '',
                 $item['flag'] ?? '',
+                $item['link_image'] ?? '',
             ]);
         }
     }
@@ -91,13 +93,16 @@ class CsvService
                 $rowErrors[] = 'item_name is required';
             }
             if (isset($mapped['rating']) && $mapped['rating'] !== '') {
-                $r = filter_var($mapped['rating'], FILTER_VALIDATE_INT);
-                if ($r === false || $r < 1 || $r > 100) {
+                $r = is_numeric($mapped['rating']) ? (float) $mapped['rating'] : null;
+                if ($r === null || $r < 1 || $r > 100) {
                     $rowErrors[] = 'rating must be 1–100';
                 }
             }
             if (isset($mapped['link']) && $mapped['link'] !== '' && !filter_var($mapped['link'], FILTER_VALIDATE_URL)) {
                 $rowErrors[] = 'invalid URL in link';
+            }
+            if (isset($mapped['link_image']) && $mapped['link_image'] !== '' && !filter_var($mapped['link_image'], FILTER_VALIDATE_URL)) {
+                $rowErrors[] = 'invalid URL in link_image';
             }
 
             // Determine action
@@ -118,7 +123,7 @@ class CsvService
     }
 
     /**
-     * Import validated rows into the database.
+     * Import validated rows into the JSON data file.
      * $selectedLines: array of line numbers the user confirmed to import.
      */
     public function importRows(array $rows, array $selectedLines): array
@@ -140,8 +145,9 @@ class CsvService
             $data = [
                 'item_name'   => $row['item_name'] ?? '',
                 'author_name' => $row['author_name'] ?? '',
+                'category'    => $row['category'] ?? '',
                 'link'        => $row['link'] ?? '',
-                // CSV uses ; separator for tags
+                'link_image'  => $row['link_image'] ?? '',
                 'tags'        => $row['tags'] ?? '',
                 'notes'       => $row['notes'] ?? '',
                 'rating'      => $row['rating'] ?? '',

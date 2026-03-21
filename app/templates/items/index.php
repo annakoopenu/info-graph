@@ -91,24 +91,33 @@ ob_start();
             <tr>
                 <th>Name</th>
                 <th>Author</th>
+                <th>Category</th>
                 <th>Tags</th>
                 <th>Rating</th>
                 <th>Flag</th>
-                <th>Updated</th>
             </tr>
         </thead>
         <tbody>
             <?php foreach ($items as $item): ?>
                 <tr>
                     <td>
-                        <a href="<?= url('items/' . (int) $item['id']) ?>">
-                            <?= htmlspecialchars($item['item_name'], ENT_QUOTES, 'UTF-8') ?>
-                        </a>
+                        <div class="item-cell">
+                            <?php if (!empty($item['link_image'])): ?>
+                                <img src="<?= htmlspecialchars($item['link_image'], ENT_QUOTES, 'UTF-8') ?>"
+                                     alt=""
+                                     class="item-thumb"
+                                     loading="lazy">
+                            <?php endif; ?>
+                            <a href="<?= url('items/' . (int) $item['id']) ?>">
+                                <?= htmlspecialchars($item['item_name'], ENT_QUOTES, 'UTF-8') ?>
+                            </a>
+                        </div>
                     </td>
                     <td><?= htmlspecialchars($item['author_name'] ?? '', ENT_QUOTES, 'UTF-8') ?></td>
+                    <td><?= htmlspecialchars($item['category'] ?? '', ENT_QUOTES, 'UTF-8') ?: '—' ?></td>
                     <td>
                         <?php if ($item['tags']): ?>
-                            <?php foreach (explode(', ', $item['tags']) as $tag): ?>
+                            <?php foreach (preg_split('/[;,]\s*/', $item['tags']) as $tag): ?>
                                 <span class="tag"><?= htmlspecialchars($tag, ENT_QUOTES, 'UTF-8') ?></span>
                             <?php endforeach; ?>
                         <?php endif; ?>
@@ -121,7 +130,6 @@ ob_start();
                             </span>
                         <?php endif; ?>
                     </td>
-                    <td><?= htmlspecialchars($item['updated_at'] ?? '', ENT_QUOTES, 'UTF-8') ?></td>
                 </tr>
             <?php endforeach; ?>
         </tbody>
@@ -132,8 +140,17 @@ ob_start();
     <div class="tiles-grid">
         <?php foreach ($items as $item): ?>
             <a href="<?= url('items/' . (int) $item['id']) ?>" class="tile <?= $item['flag'] ? 'tile-' . htmlspecialchars($item['flag'], ENT_QUOTES, 'UTF-8') : '' ?>">
+                <?php if (!empty($item['link_image'])): ?>
+                    <img src="<?= htmlspecialchars($item['link_image'], ENT_QUOTES, 'UTF-8') ?>"
+                         alt=""
+                         class="tile-image"
+                         loading="lazy">
+                <?php endif; ?>
                 <div class="tile-name"><?= htmlspecialchars($item['item_name'], ENT_QUOTES, 'UTF-8') ?></div>
                 <div class="tile-author"><?= htmlspecialchars($item['author_name'] ?? '', ENT_QUOTES, 'UTF-8') ?></div>
+                <?php if (!empty($item['category'])): ?>
+                    <div class="tile-category"><?= htmlspecialchars($item['category'], ENT_QUOTES, 'UTF-8') ?></div>
+                <?php endif; ?>
                 <?php if ($item['rating'] !== null): ?>
                     <div class="tile-rating">
                         <span class="rating-bar" style="width: <?= (int) $item['rating'] ?>%"></span>
@@ -142,7 +159,7 @@ ob_start();
                 <?php endif; ?>
                 <div class="tile-tags">
                     <?php if ($item['tags']): ?>
-                        <?php foreach (explode(', ', $item['tags']) as $tag): ?>
+                        <?php foreach (preg_split('/[;,]\s*/', $item['tags']) as $tag): ?>
                             <span class="tag"><?= htmlspecialchars($tag, ENT_QUOTES, 'UTF-8') ?></span>
                         <?php endforeach; ?>
                     <?php endif; ?>
