@@ -56,9 +56,9 @@ function url(string $path = '/'): string
 
 function dataFilePath(): string
 {
-    $path = env('APP_DATA_FILE', __DIR__ . '/../info_graph_47_rows.json');
+    $path = env('APP_DATA_FILE', __DIR__ . '/../info-graph-data/items.json');
     if ($path === '') {
-        return __DIR__ . '/../info_graph_47_rows.json';
+        return __DIR__ . '/../info-graph-data/items.json';
     }
     if ($path[0] === '/') {
         return $path;

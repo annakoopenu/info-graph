@@ -1,0 +1,9 @@
+[
+  { "category_id": 1, "category_name": "music" },
+  { "category_id": 2, "category_name": "book" },
+  { "category_id": 3, "category_name": "film" },
+  { "category_id": 4, "category_name": "art" },
+  { "category_id": 5, "category_name": "science" },
+  { "category_id": 6, "category_name": "history" },
+  { "category_id": 7, "category_name": "philosophy" }
+]

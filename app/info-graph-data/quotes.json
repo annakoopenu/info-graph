@@ -1,0 +1,17 @@
+[
+  {
+    "quote_id": 1,
+    "creator_p_id": 1,
+    "quote_text": "Two things are infinite: the universe and human stupidity; and I'm not sure about the universe."
+  },
+  {
+    "quote_id": 2,
+    "creator_p_id": 1,
+    "quote_text": "The world as we have created it is a process of our thinking. It cannot be changed without changing our thinking."
+  },
+  {
+    "quote_id": 3,
+    "creator_p_id": 1,
+    "quote_text": "Everybody is a genius. But if you judge a fish by its ability to climb a tree, it will live its whole life believing that it is stupid." 
+    }
+ ]

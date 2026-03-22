@@ -1,0 +1,37 @@
+[
+  {
+    "creator_e_id": 1,
+    "name": "Gotan Project",
+    "link_image": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/Gotan_Project.jpg/250px-Gotan_Project.jpg"
+  },
+  {
+    "creator_e_id": 2,
+    "name": "Jefferson Airplane",
+    "link_image": "https://upload.wikimedia.org/wikipedia/en/thumb/f/f2/Jefferson_Airplane.jpg/250px-Jefferson_Airplane.jpg"
+  },
+  {
+    "creator_e_id": 3,
+    "name": "Oi Va Voi",
+    "link_image": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Oi_Va_Voi_Cambridge_2009.jpg/330px-Oi_Va_Voi_Cambridge_2009.jpg"
+  },
+  {
+    "creator_e_id": 4,
+    "name": "Pet Shop Boys",
+    "link_image": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/Pet_Shop_Boys_interview_2013_still.png/330px-Pet_Shop_Boys_interview_2013_still.png"
+  },
+  {
+    "creator_e_id": 5,
+    "name": "Queen",
+    "link_image": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Queen_A_Night_At_The_Opera_%281975_Elektra_publicity_photo_02%29.jpg/330px-Queen_A_Night_At_The_Opera_%281975_Elektra_publicity_photo_02%29.jpg"
+  },
+  {
+    "creator_e_id": 6,
+    "name": "The Beatles",
+    "link_image": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/42/The_Beatles_1963_Dezo_Hoffman_Capitol_Records_press_photo_2.jpg/330px-The_Beatles_1963_Dezo_Hoffman_Capitol_Records_press_photo_2.jpg"
+  },
+  {
+    "creator_e_id": 7,
+    "name": "The Doors",
+    "link_image": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/The_Doors_1968.JPG/250px-The_Doors_1968.JPG"
+  }
+]

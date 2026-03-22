@@ -89,7 +89,7 @@ class ItemRepository
         $found = false;
 
         foreach ($records as $index => $record) {
-            $recordId = isset($record['id']) ? (int) $record['id'] : ($index + 1);
+            $recordId = $this->resolveRecordId($record, $index);
             if ($recordId !== $id) {
                 continue;
             }
@@ -117,7 +117,7 @@ class ItemRepository
         $filtered = [];
 
         foreach ($records as $index => $record) {
-            $recordId = isset($record['id']) ? (int) $record['id'] : ($index + 1);
+            $recordId = $this->resolveRecordId($record, $index);
             if ($recordId !== $id) {
                 $filtered[] = $record;
             }
@@ -181,7 +181,7 @@ class ItemRepository
     {
         $items = [];
         foreach ($records as $index => $record) {
-            $items[] = $this->normalizeRecord($record, isset($record['id']) ? (int) $record['id'] : ($index + 1));
+            $items[] = $this->normalizeRecord($record, $this->resolveRecordId($record, $index));
         }
         return $items;
     }
@@ -210,7 +210,7 @@ class ItemRepository
     private function normalizeForStorage(array $data, array $overrides = []): array
     {
         $item = [
-            'id' => $overrides['id'] ?? ($data['id'] ?? null),
+            'item_id' => $overrides['id'] ?? ($data['id'] ?? $data['item_id'] ?? null),
             'item_name' => trim((string) ($data['item_name'] ?? '')),
             'author_name' => trim((string) ($data['author_name'] ?? '')),
             'category' => trim((string) ($data['category'] ?? '')),
@@ -225,6 +225,19 @@ class ItemRepository
         ];
 
         return array_filter($item, static fn($value): bool => $value !== '');
+    }
+
+    private function resolveRecordId(array $record, int $index): int
+    {
+        if (isset($record['id']) && $record['id'] !== '') {
+            return (int) $record['id'];
+        }
+
+        if (isset($record['item_id']) && $record['item_id'] !== '') {
+            return (int) $record['item_id'];
+        }
+
+        return $index + 1;
     }
 
     private function saveRecords(array $records): void
