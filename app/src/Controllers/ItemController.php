@@ -21,12 +21,12 @@ class ItemController
         $filters = [
             'search' => trim($_GET['search'] ?? ''),
             'tag'    => trim($_GET['tag'] ?? ''),
-            'flag'   => trim($_GET['flag'] ?? ''),
+            'category' => trim($_GET['category'] ?? ''),
         ];
 
-        $items    = $this->repo->findAll($filters);
-        $allTags  = $this->repo->allTags();
-        $allFlags = $this->repo->allFlags();
+        $items         = $this->repo->findAll($filters);
+        $allTags       = $this->repo->allTags();
+        $allCategories = $this->repo->allCategories();
 
         require __DIR__ . '/../../templates/items/index.php';
     }

@@ -1,7 +1,7 @@
 <?php
 /**
  * Items list view — supports list / tiles / cloud modes.
- * Variables: $items, $filters, $allTags, $allFlags
+ * Variables: $items, $filters, $allTags, $allCategories
  */
 $pageTitle = 'Items';
 $view = $_GET['view'] ?? 'list';
@@ -37,17 +37,17 @@ ob_start();
             <?php endforeach; ?>
         </select>
 
-        <select name="flag">
-            <option value="">All flags</option>
-            <?php foreach ($allFlags as $f): ?>
-                <option value="<?= htmlspecialchars($f, ENT_QUOTES, 'UTF-8') ?>"
-                    <?= ($filters['flag'] ?? '') === $f ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($f, ENT_QUOTES, 'UTF-8') ?>
+        <select name="category">
+            <option value="">All categories</option>
+            <?php foreach ($allCategories as $category): ?>
+                <option value="<?= htmlspecialchars($category, ENT_QUOTES, 'UTF-8') ?>"
+                    <?= ($filters['category'] ?? '') === $category ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($category, ENT_QUOTES, 'UTF-8') ?>
                 </option>
             <?php endforeach; ?>
         </select>
 
-        <?php if (($filters['search'] ?? '') !== '' || ($filters['tag'] ?? '') !== '' || ($filters['flag'] ?? '') !== ''): ?>
+        <?php if (($filters['search'] ?? '') !== '' || ($filters['tag'] ?? '') !== '' || ($filters['category'] ?? '') !== ''): ?>
             <a href="<?= url('items') ?>?view=<?= $view ?>" class="btn-clear">Clear</a>
         <?php endif; ?>
     </form>

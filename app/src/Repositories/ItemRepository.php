@@ -43,9 +43,11 @@ class ItemRepository
             }));
         }
 
-        if (!empty($filters['flag'])) {
-            $flagFilter = trim((string) $filters['flag']);
-            $items = array_values(array_filter($items, fn(array $item): bool => ($item['flag'] ?? '') === $flagFilter));
+        if (!empty($filters['category'])) {
+            $categoryFilter = $this->lower(trim((string) $filters['category']));
+            $items = array_values(array_filter($items, function (array $item) use ($categoryFilter): bool {
+                return $this->lower(trim((string) ($item['category'] ?? ''))) === $categoryFilter;
+            }));
         }
 
         return $items;
@@ -151,6 +153,20 @@ class ItemRepository
 
         natcasesort($flags);
         return array_values($flags);
+    }
+
+    public function allCategories(): array
+    {
+        $categories = [];
+        foreach ($this->loadItems() as $item) {
+            $category = trim((string) ($item['category'] ?? ''));
+            if ($category !== '') {
+                $categories[$this->lower($category)] = $category;
+            }
+        }
+
+        natcasesort($categories);
+        return array_values($categories);
     }
 
     private function loadItems(): array
