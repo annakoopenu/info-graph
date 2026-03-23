@@ -49,9 +49,19 @@ ob_start();
 
     <div class="form-group <?= isset($errors['link_image']) ? 'has-error' : '' ?>">
         <label for="link_image">Image Link</label>
-        <input type="url" id="link_image" name="link_image"
-               value="<?= htmlspecialchars($item['link_image'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
-               placeholder="https://…">
+        <div class="image-link-row">
+            <input type="url" id="link_image" name="link_image"
+                   value="<?= htmlspecialchars($item['link_image'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                   placeholder="https://…">
+            <?php if ($isEdit): ?>
+                <button type="submit"
+                        class="btn"
+                        formaction="<?= url('items/' . (int) $item['id'] . '/replace-image') ?>"
+                        formmethod="post">
+                    Replace pic
+                </button>
+            <?php endif; ?>
+        </div>
         <?php if (isset($errors['link_image'])): ?>
             <span class="error"><?= htmlspecialchars($errors['link_image'], ENT_QUOTES, 'UTF-8') ?></span>
         <?php endif; ?>

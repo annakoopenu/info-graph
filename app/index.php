@@ -33,6 +33,7 @@ $router->post('/items',          fn($p) => $ctrl->store($p));
 $router->get('/items/{id}',      fn($p) => $ctrl->show($p));
 $router->get('/items/{id}/edit', fn($p) => $ctrl->edit($p));
 $router->post('/items/{id}',     fn($p) => $ctrl->update($p));
+$router->post('/items/{id}/replace-image', fn($p) => $ctrl->replaceImage($p));
 $router->post('/items/{id}/delete', fn($p) => $ctrl->destroy($p));
 
 $router->get('/export',          fn($p) => $csvCtrl->export($p));

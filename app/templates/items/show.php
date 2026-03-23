@@ -17,6 +17,10 @@ ob_start();
         </div>
         <div class="item-actions">
             <a href="<?= url('items/' . (int) $item['id'] . '/edit') ?>" class="btn">Edit</a>
+            <form method="post" action="<?= url('items/' . (int) $item['id'] . '/replace-image') ?>" class="inline-form">
+                <?= csrfField() ?>
+                <button type="submit" class="btn">Replace pic</button>
+            </form>
             <form method="post" action="<?= url('items/' . (int) $item['id'] . '/delete') ?>" class="inline-form"
                   onsubmit="return confirm('Delete this item?')">
                 <?= csrfField() ?>

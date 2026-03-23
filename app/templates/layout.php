@@ -12,6 +12,10 @@ $pageTitle = $pageTitle ?? 'Info-Graph';
     <link rel="stylesheet" href="<?= url('assets/style.css') ?>">
 </head>
 <body>
+    <?php
+    $flash = $_SESSION['flash'] ?? null;
+    unset($_SESSION['flash']);
+    ?>
     <header class="site-header">
         <a href="<?= url('items') ?>" class="logo">Info-Graph</a>
         <nav>
@@ -22,6 +26,11 @@ $pageTitle = $pageTitle ?? 'Info-Graph';
     </header>
 
     <main class="container">
+        <?php if (is_array($flash) && !empty($flash['message'])): ?>
+            <div class="alert alert-<?= htmlspecialchars((string) ($flash['type'] ?? 'success'), ENT_QUOTES, 'UTF-8') ?>">
+                <?= htmlspecialchars((string) $flash['message'], ENT_QUOTES, 'UTF-8') ?>
+            </div>
+        <?php endif; ?>
         <?= $content ?>
     </main>
 </body>

@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../csrf.php';
 require_once __DIR__ . '/../Repositories/ItemRepository.php';
+require_once __DIR__ . '/../Services/ImageReplacementService.php';
 
 class ItemController
 {
     private ItemRepository $repo;
+    private ImageReplacementService $imageReplacementService;
 
     public function __construct()
     {
         $this->repo = new ItemRepository();
+        $this->imageReplacementService = new ImageReplacementService();
     }
 
     // ── List ─────────────────────────────────────────────────────
@@ -123,6 +126,39 @@ class ItemController
         $id = (int) $params['id'];
         $this->repo->delete($id);
         header('Location: ' . url('items'));
+        exit;
+    }
+
+    public function replaceImage(array $params): void
+    {
+        verifyCsrf();
+
+        $id = (int) $params['id'];
+        $item = $this->repo->findById($id);
+
+        if (!$item) {
+            http_response_code(404);
+            require __DIR__ . '/../../templates/404.php';
+            return;
+        }
+
+        $replacementUrl = $this->imageReplacementService->findReplacementUrl($item);
+        if ($replacementUrl === null) {
+            $_SESSION['flash'] = [
+                'type' => 'error',
+                'message' => 'No replacement image was found for this item.',
+            ];
+            header('Location: ' . url('items/' . $id . '/edit'));
+            exit;
+        }
+
+        $this->repo->update($id, array_merge($item, ['link_image' => $replacementUrl]));
+        $_SESSION['flash'] = [
+            'type' => 'success',
+            'message' => 'Image replaced successfully.',
+        ];
+
+        header('Location: ' . url('items/' . $id . '/edit'));
         exit;
     }
 
