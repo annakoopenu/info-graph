@@ -1,9 +1,9 @@
 <?php
 /**
  * Items list view — supports list / tiles / cloud modes.
- * Variables: $items, $filters, $allTags, $allCategories
+ * Variables: $items, $filters, $allTags, $allCategories, $collection
  */
-$pageTitle = 'Items';
+$pageTitle = ucfirst($collection);
 $view = $_GET['view'] ?? 'list';
 if (!in_array($view, ['list', 'tiles', 'cloud'], true)) {
     $view = 'list';
@@ -16,12 +16,26 @@ function viewUrl(string $mode): string {
     return url('items') . '?' . http_build_query($params);
 }
 
+function collectionUrl(string $targetCollection): string {
+    $params = $_GET;
+    $params['collection'] = $targetCollection;
+    unset($params['search'], $params['tag'], $params['category']);
+    return url('items') . '?' . http_build_query($params);
+}
+
 ob_start();
 ?>
+
+<nav class="collection-menu" aria-label="Collection switcher">
+    <a href="<?= collectionUrl('items') ?>" class="collection-btn <?= $collection === 'items' ? 'collection-btn-active' : '' ?>">Items</a>
+    <a href="<?= collectionUrl('people') ?>" class="collection-btn <?= $collection === 'people' ? 'collection-btn-active' : '' ?>">People</a>
+    <a href="<?= collectionUrl('groups') ?>" class="collection-btn <?= $collection === 'groups' ? 'collection-btn-active' : '' ?>">Groups</a>
+</nav>
 
 <section class="filters">
     <form method="get" action="<?= url('items') ?>" class="filter-form" id="filter-form">
         <input type="hidden" name="view" value="<?= htmlspecialchars($view, ENT_QUOTES, 'UTF-8') ?>">
+        <input type="hidden" name="collection" value="<?= htmlspecialchars($collection, ENT_QUOTES, 'UTF-8') ?>">
         <input type="text"
                name="search"
                placeholder="Search name, author, notes…"
@@ -48,7 +62,7 @@ ob_start();
         </select>
 
         <?php if (($filters['search'] ?? '') !== '' || ($filters['tag'] ?? '') !== '' || ($filters['category'] ?? '') !== ''): ?>
-            <a href="<?= url('items') ?>?view=<?= $view ?>" class="btn-clear">Clear</a>
+            <a href="<?= url('items') ?>?<?= http_build_query(['view' => $view, 'collection' => $collection]) ?>" class="btn-clear">Clear</a>
         <?php endif; ?>
     </form>
 </section>
@@ -82,7 +96,12 @@ ob_start();
 </div>
 
 <?php if (empty($items)): ?>
-    <p class="empty-state">No items found. <a href="<?= url('items/new') ?>">Add one?</a></p>
+    <p class="empty-state">
+        No items found.
+        <?php if ($collection === 'items'): ?>
+            <a href="<?= url('items/new') ?>">Add one?</a>
+        <?php endif; ?>
+    </p>
 
 <?php elseif ($view === 'list'): ?>
     <!-- ── LIST VIEW ──────────────────────────────────────────── -->
@@ -108,9 +127,13 @@ ob_start();
                                      class="item-thumb"
                                      loading="lazy">
                             <?php endif; ?>
-                            <a href="<?= url('items/' . (int) $item['id']) ?>">
-                                <?= htmlspecialchars($item['item_name'], ENT_QUOTES, 'UTF-8') ?>
-                            </a>
+                            <?php if ($collection === 'items'): ?>
+                                <a href="<?= url('items/' . (int) $item['id']) ?>">
+                                    <?= htmlspecialchars($item['item_name'], ENT_QUOTES, 'UTF-8') ?>
+                                </a>
+                            <?php else: ?>
+                                <span><?= htmlspecialchars($item['item_name'], ENT_QUOTES, 'UTF-8') ?></span>
+                            <?php endif; ?>
                         </div>
                     </td>
                     <td><?= htmlspecialchars($item['author_name'] ?? '', ENT_QUOTES, 'UTF-8') ?></td>
@@ -139,7 +162,10 @@ ob_start();
     <!-- ── TILES VIEW ─────────────────────────────────────────── -->
     <div class="tiles-grid">
         <?php foreach ($items as $item): ?>
-            <a href="<?= url('items/' . (int) $item['id']) ?>" class="tile <?= $item['flag'] ? 'tile-' . htmlspecialchars($item['flag'], ENT_QUOTES, 'UTF-8') : '' ?>">
+            <?php $tileTag = $collection === 'items' ? 'a' : 'div'; ?>
+            <?= '<' . $tileTag ?>
+                <?= $collection === 'items' ? 'href="' . htmlspecialchars(url('items/' . (int) $item['id']), ENT_QUOTES, 'UTF-8') . '"' : '' ?>
+                class="tile <?= $item['flag'] ? 'tile-' . htmlspecialchars($item['flag'], ENT_QUOTES, 'UTF-8') : '' ?>">
                 <?php if (!empty($item['link_image'])): ?>
                     <img src="<?= htmlspecialchars($item['link_image'], ENT_QUOTES, 'UTF-8') ?>"
                          alt=""
@@ -169,7 +195,7 @@ ob_start();
                         <?= htmlspecialchars($item['flag'], ENT_QUOTES, 'UTF-8') ?>
                     </span>
                 <?php endif; ?>
-            </a>
+            </<?= $tileTag ?>>
         <?php endforeach; ?>
     </div>
 
@@ -177,13 +203,15 @@ ob_start();
     <!-- ── CLOUD VIEW ─────────────────────────────────────────── -->
     <div class="cloud-container" id="cloud-container">
         <?php foreach ($items as $item): ?>
-            <a href="<?= url('items/' . (int) $item['id']) ?>"
+            <?php $cloudTag = $collection === 'items' ? 'a' : 'div'; ?>
+            <?= '<' . $cloudTag ?>
+               <?= $collection === 'items' ? 'href="' . htmlspecialchars(url('items/' . (int) $item['id']), ENT_QUOTES, 'UTF-8') . '"' : '' ?>
                class="cloud-dot <?= $item['flag'] ? 'dot-' . htmlspecialchars($item['flag'], ENT_QUOTES, 'UTF-8') : 'dot-none' ?>"
                data-id="<?= (int) $item['id'] ?>"
                data-rating="<?= $item['rating'] !== null ? (int) $item['rating'] : 50 ?>"
                title="<?= htmlspecialchars($item['item_name'], ENT_QUOTES, 'UTF-8') ?> — <?= htmlspecialchars($item['author_name'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
                 <span class="dot-label"><?= htmlspecialchars($item['item_name'], ENT_QUOTES, 'UTF-8') ?></span>
-            </a>
+            </<?= $cloudTag ?>>
         <?php endforeach; ?>
     </div>
     <script src="<?= url('assets/cloud.js') ?>"></script>

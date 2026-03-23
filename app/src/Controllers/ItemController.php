@@ -21,15 +21,21 @@ class ItemController
 
     public function index(array $params): void
     {
+        $collection = trim((string) ($_GET['collection'] ?? 'items'));
+        if (!in_array($collection, ['items', 'people', 'groups'], true)) {
+            $collection = 'items';
+        }
+
+        $repo = new ItemRepository(collectionDataFilePath($collection), $collection);
         $filters = [
             'search' => trim($_GET['search'] ?? ''),
             'tag'    => trim($_GET['tag'] ?? ''),
             'category' => trim($_GET['category'] ?? ''),
         ];
 
-        $items         = $this->repo->findAll($filters);
-        $allTags       = $this->repo->allTags();
-        $allCategories = $this->repo->allCategories();
+        $items         = $repo->findAll($filters);
+        $allTags       = $repo->allTags();
+        $allCategories = $repo->allCategories();
 
         require __DIR__ . '/../../templates/items/index.php';
     }

@@ -7,10 +7,13 @@ require_once __DIR__ . '/../config.php';
 class ItemRepository
 {
     private string $dataFile;
+    private string $collection;
+    private ?array $categoryMap = null;
 
-    public function __construct(?string $dataFile = null)
+    public function __construct(?string $dataFile = null, string $collection = 'items')
     {
         $this->dataFile = $dataFile ?? dataFilePath();
+        $this->collection = $collection;
     }
 
     public function findAll(array $filters = []): array
@@ -204,6 +207,14 @@ class ItemRepository
 
     private function normalizeRecord(array $record, int $id): array
     {
+        if ($this->collection === 'people') {
+            return $this->normalizePersonRecord($record, $id);
+        }
+
+        if ($this->collection === 'groups') {
+            return $this->normalizeGroupRecord($record, $id);
+        }
+
         $rating = $record['rating'] ?? null;
         $rating = ($rating === '' || $rating === null) ? null : (int) round((float) $rating);
 
@@ -220,6 +231,44 @@ class ItemRepository
             'flag' => trim((string) ($record['flag'] ?? '')),
             'created_at' => trim((string) ($record['created_at'] ?? '')),
             'updated_at' => trim((string) ($record['updated_at'] ?? '')),
+        ];
+    }
+
+    private function normalizePersonRecord(array $record, int $id): array
+    {
+        $categoryId = (int) ($record['category_id'] ?? 0);
+
+        return [
+            'id' => $id,
+            'item_name' => trim((string) ($record['name'] ?? '')),
+            'author_name' => '',
+            'category' => $this->categoryNameById($categoryId),
+            'link' => '',
+            'link_image' => trim((string) ($record['link_image'] ?? '')),
+            'tags' => '',
+            'notes' => '',
+            'rating' => null,
+            'flag' => '',
+            'created_at' => '',
+            'updated_at' => '',
+        ];
+    }
+
+    private function normalizeGroupRecord(array $record, int $id): array
+    {
+        return [
+            'id' => $id,
+            'item_name' => trim((string) ($record['name'] ?? '')),
+            'author_name' => '',
+            'category' => '',
+            'link' => '',
+            'link_image' => trim((string) ($record['link_image'] ?? '')),
+            'tags' => '',
+            'notes' => '',
+            'rating' => null,
+            'flag' => '',
+            'created_at' => '',
+            'updated_at' => '',
         ];
     }
 
@@ -245,6 +294,14 @@ class ItemRepository
 
     private function resolveRecordId(array $record, int $index): int
     {
+        if ($this->collection === 'people' && isset($record['creator_p_id']) && $record['creator_p_id'] !== '') {
+            return (int) $record['creator_p_id'];
+        }
+
+        if ($this->collection === 'groups' && isset($record['creator_e_id']) && $record['creator_e_id'] !== '') {
+            return (int) $record['creator_e_id'];
+        }
+
         if (isset($record['id']) && $record['id'] !== '') {
             return (int) $record['id'];
         }
@@ -292,5 +349,35 @@ class ItemRepository
         }
 
         return strtolower($value);
+    }
+
+    private function categoryNameById(int $categoryId): string
+    {
+        if ($categoryId <= 0) {
+            return '';
+        }
+
+        if ($this->categoryMap === null) {
+            $this->categoryMap = [];
+            $path = dirname(__DIR__, 2) . '/info-graph-data/categories.json';
+            if (is_file($path)) {
+                $json = file_get_contents($path);
+                $data = is_string($json) ? json_decode($json, true) : null;
+                if (is_array($data)) {
+                    foreach ($data as $row) {
+                        if (!is_array($row)) {
+                            continue;
+                        }
+                        $id = (int) ($row['category_id'] ?? 0);
+                        $name = trim((string) ($row['category_name'] ?? ''));
+                        if ($id > 0 && $name !== '') {
+                            $this->categoryMap[$id] = $name;
+                        }
+                    }
+                }
+            }
+        }
+
+        return $this->categoryMap[$categoryId] ?? '';
     }
 }

@@ -65,3 +65,14 @@ function dataFilePath(): string
     }
     return dirname(__DIR__) . '/' . ltrim($path, '/');
 }
+
+function collectionDataFilePath(string $collection): string
+{
+    $collection = trim($collection);
+
+    return match ($collection) {
+        'people' => dirname(__DIR__) . '/info-graph-data/creators_people.json',
+        'groups' => dirname(__DIR__) . '/info-graph-data/creators_groups.json',
+        default => dataFilePath(),
+    };
+}
