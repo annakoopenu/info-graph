@@ -4,7 +4,7 @@
  * Variables: $item, $collection
  */
 $pageTitle = $item['item_name'];
-$isPeople = $collection === 'people';
+$isPersonLike = in_array($collection, ['people', 'groups'], true);
 ob_start();
 ?>
 
@@ -41,7 +41,7 @@ ob_start();
     <?php endif; ?>
 
     <dl class="detail-grid">
-        <?php if (!$isPeople): ?>
+        <?php if (!$isPersonLike): ?>
             <dt>Author</dt>
             <dd><?= htmlspecialchars($item['author_name'] ?? '', ENT_QUOTES, 'UTF-8') ?: '—' ?></dd>
         <?php endif; ?>
@@ -49,7 +49,7 @@ ob_start();
         <dt>Category</dt>
         <dd><?= htmlspecialchars($item['category'] ?? '', ENT_QUOTES, 'UTF-8') ?: '—' ?></dd>
 
-        <?php if (!$isPeople): ?>
+        <?php if (!$isPersonLike): ?>
             <dt>Link</dt>
             <dd>
                 <?php if ($item['link']): ?>
@@ -75,7 +75,7 @@ ob_start();
             <?php endif; ?>
         </dd>
 
-        <?php if (!$isPeople): ?>
+        <?php if (!$isPersonLike): ?>
             <dt>Tags</dt>
             <dd>
                 <?php if ($item['tags']): ?>

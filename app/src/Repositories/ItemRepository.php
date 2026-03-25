@@ -278,6 +278,10 @@ class ItemRepository
             return $this->normalizePersonForStorage($data, $overrides);
         }
 
+        if ($this->collection === 'groups') {
+            return $this->normalizeGroupForStorage($data, $overrides);
+        }
+
         $item = [
             'item_id' => $overrides['id'] ?? ($data['id'] ?? $data['item_id'] ?? null),
             'item_name' => trim((string) ($data['item_name'] ?? '')),
@@ -308,6 +312,17 @@ class ItemRepository
             'name' => $name,
             'category_id' => $categoryId > 0 ? $categoryId : null,
             'link_image' => $image,
+        ];
+
+        return array_filter($record, static fn($value): bool => $value !== '' && $value !== null);
+    }
+
+    private function normalizeGroupForStorage(array $data, array $overrides = []): array
+    {
+        $record = [
+            'creator_e_id' => $overrides['id'] ?? ($data['id'] ?? $data['creator_e_id'] ?? null),
+            'name' => trim((string) ($data['item_name'] ?? $data['name'] ?? '')),
+            'link_image' => trim((string) ($data['link_image'] ?? '')),
         ];
 
         return array_filter($record, static fn($value): bool => $value !== '' && $value !== null);

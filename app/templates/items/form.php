@@ -5,11 +5,14 @@
  */
 $isEdit    = isset($item['id']);
 $isPeople  = $collection === 'people';
-$pageTitle = $isEdit ? ($isPeople ? 'Edit Person' : 'Edit Item') : ($isPeople ? 'New Person' : 'New Item');
+$isGroups  = $collection === 'groups';
+$isEntity  = in_array($collection, ['people', 'groups'], true);
+$entityLabel = $isPeople ? 'Person' : ($isGroups ? 'Group' : 'Item');
+$pageTitle = $isEdit ? 'Edit ' . $entityLabel : 'New ' . $entityLabel;
 ob_start();
 ?>
 
-<h1><?= $isEdit ? ($isPeople ? 'Edit Person' : 'Edit Item') : ($isPeople ? 'New Person' : 'New Item') ?></h1>
+<h1><?= $isEdit ? 'Edit ' . $entityLabel : 'New ' . $entityLabel ?></h1>
 
 <form method="post"
       action="<?= $isEdit ? url('items/' . (int) $item['id']) : url('items') ?>"
@@ -26,7 +29,7 @@ ob_start();
         <?php endif; ?>
     </div>
 
-    <?php if (!$isPeople): ?>
+    <?php if (!$isEntity): ?>
         <div class="form-group">
             <label for="author_name">Author</label>
             <input type="text" id="author_name" name="author_name"
@@ -46,14 +49,19 @@ ob_start();
                     </option>
                 <?php endforeach; ?>
             </select>
-        <?php else: ?>
+        <?php elseif (!$isGroups): ?>
             <input type="text" id="category" name="category"
                    value="<?= htmlspecialchars($item['category'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
                    placeholder="music, book, art, film">
+        <?php else: ?>
+            <input type="text" id="category" name="category"
+                   value=""
+                   placeholder="No category for groups"
+                   disabled>
         <?php endif; ?>
     </div>
 
-    <?php if (!$isPeople): ?>
+    <?php if (!$isEntity): ?>
         <div class="form-group <?= isset($errors['link']) ? 'has-error' : '' ?>">
             <label for="link">Link</label>
             <input type="url" id="link" name="link"
@@ -85,7 +93,7 @@ ob_start();
         <?php endif; ?>
     </div>
 
-    <?php if (!$isPeople): ?>
+    <?php if (!$isEntity): ?>
         <div class="form-group">
             <label for="tags">Tags <small>(comma or semicolon separated)</small></label>
             <input type="text" id="tags" name="tags"
@@ -118,7 +126,7 @@ ob_start();
     <?php endif; ?>
 
     <div class="form-actions">
-        <button type="submit" class="btn btn-primary"><?= $isEdit ? 'Save Changes' : ($isPeople ? 'Create Person' : 'Create Item') ?></button>
+        <button type="submit" class="btn btn-primary"><?= $isEdit ? 'Save Changes' : 'Create ' . $entityLabel ?></button>
         <a href="<?= $isEdit ? ($collection === 'items' ? url('items/' . (int) $item['id']) : url('items/' . (int) $item['id']) . '?collection=' . urlencode($collection)) : ($collection === 'items' ? url('items') : url('items') . '?collection=' . urlencode($collection)) ?>" class="btn">Cancel</a>
     </div>
 </form>

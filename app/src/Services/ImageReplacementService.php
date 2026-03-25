@@ -10,18 +10,22 @@ class ImageReplacementService
     {
         $wikipediaTitle = $this->extractWikipediaTitle((string) ($item['link'] ?? ''));
         if ($wikipediaTitle !== null) {
-            $imageUrl = $this->fetchWikipediaThumbnailByTitle($wikipediaTitle);
+            foreach ($this->preferredWikipediaTitles($item, $wikipediaTitle) as $candidateTitle) {
+                $imageUrl = $this->fetchWikipediaThumbnailByTitle($candidateTitle);
+                if ($imageUrl !== null) {
+                    return $imageUrl;
+                }
+            }
+        }
+
+        foreach ($this->buildSearchQueries($item) as $query) {
+            $imageUrl = $this->searchWikipediaThumbnail($query);
             if ($imageUrl !== null) {
                 return $imageUrl;
             }
         }
 
-        $query = $this->buildSearchQuery($item);
-        if ($query === '') {
-            return null;
-        }
-
-        return $this->searchWikipediaThumbnail($query);
+        return null;
     }
 
     private function extractWikipediaTitle(string $link): ?string
@@ -101,17 +105,57 @@ class ImageReplacementService
         return null;
     }
 
-    private function buildSearchQuery(array $item): string
+    private function preferredWikipediaTitles(array $item, string $title): array
     {
+        $titles = [$title];
+        $itemName = trim((string) ($item['item_name'] ?? ''));
+
+        if ($this->isFilm($item)) {
+            if ($itemName !== '') {
+                $titles[] = $itemName . ' (film)';
+                $titles[] = $itemName . ' (movie)';
+            }
+
+            $titles[] = $title . ' (film)';
+            $titles[] = $title . ' (movie)';
+        }
+
+        return array_values(array_unique(array_filter(array_map('trim', $titles))));
+    }
+
+    private function buildSearchQueries(array $item): array
+    {
+        $itemName = trim((string) ($item['item_name'] ?? ''));
+        $authorName = trim((string) ($item['author_name'] ?? ''));
+        $category = trim((string) ($item['category'] ?? ''));
+
+        if ($this->isFilm($item)) {
+            $queries = [
+                $itemName . ' film poster',
+                $itemName . ' film',
+                $itemName . ' movie poster',
+                $itemName . ' movie',
+                $itemName,
+            ];
+
+            return array_values(array_filter(array_unique(array_map('trim', $queries))));
+        }
+
         $parts = [];
-        foreach (['item_name', 'author_name', 'category'] as $field) {
-            $value = trim((string) ($item[$field] ?? ''));
+        foreach ([$itemName, $authorName, $category] as $value) {
             if ($value !== '') {
                 $parts[] = $value;
             }
         }
 
-        return trim(implode(' ', $parts));
+        $query = trim(implode(' ', $parts));
+        return $query !== '' ? [$query] : [];
+    }
+
+    private function isFilm(array $item): bool
+    {
+        $category = trim((string) ($item['category'] ?? ''));
+        return strcasecmp($category, 'film') === 0;
     }
 
     private function fetchJson(string $url): ?array
