@@ -27,6 +27,26 @@ class CsvController
         exit;
     }
 
+    public function exportJson(array $params): void
+    {
+        $path = dataFilePath();
+        if (!is_file($path)) {
+            http_response_code(404);
+            echo 'JSON data file not found.';
+            return;
+        }
+
+        $contents = file_get_contents($path);
+        if ($contents === false) {
+            throw new RuntimeException('Unable to read JSON export file.');
+        }
+
+        header('Content-Type: application/json; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="info-graph-export.json"');
+        echo $contents;
+        exit;
+    }
+
     // ── Import: show upload form ─────────────────────────────────
 
     public function importForm(array $params): void

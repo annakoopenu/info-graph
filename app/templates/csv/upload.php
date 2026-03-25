@@ -50,6 +50,10 @@ ob_start();
         <a href="<?= url('export') ?>" class="btn">Download Export CSV</a>
         <small class="help-text">Export all current items as CSV.</small>
     </p>
+    <p>
+        <a href="<?= url('export/json') ?>" class="btn">Download Original JSON</a>
+        <small class="help-text">Export the current items JSON file exactly as stored on disk.</small>
+    </p>
 </div>
 
 <?php

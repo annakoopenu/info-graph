@@ -37,6 +37,7 @@ $router->post('/items/{id}/replace-image', fn($p) => $ctrl->replaceImage($p));
 $router->post('/items/{id}/delete', fn($p) => $ctrl->destroy($p));
 
 $router->get('/export',          fn($p) => $csvCtrl->export($p));
+$router->get('/export/json',     fn($p) => $csvCtrl->exportJson($p));
 $router->get('/import',          fn($p) => $csvCtrl->importForm($p));
 $router->post('/import',         fn($p) => $csvCtrl->importUpload($p));
 $router->post('/import/confirm', fn($p) => $csvCtrl->importConfirm($p));
