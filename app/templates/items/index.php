@@ -32,6 +32,14 @@ function detailUrl(int $id, string $collection, string $suffix = ''): string {
     return url($path) . '?' . http_build_query(['collection' => $collection]);
 }
 
+function rowLinkUrl(int $id, string $collection): string {
+    if ($collection === 'people') {
+        return detailUrl($id, $collection, '/edit');
+    }
+
+    return detailUrl($id, $collection);
+}
+
 ob_start();
 ?>
 
@@ -137,7 +145,7 @@ ob_start();
                                      loading="lazy">
                             <?php endif; ?>
                             <?php if (in_array($collection, ['items', 'people'], true)): ?>
-                                <a href="<?= detailUrl((int) $item['id'], $collection) ?>">
+                                <a href="<?= rowLinkUrl((int) $item['id'], $collection) ?>">
                                     <?= htmlspecialchars($item['item_name'], ENT_QUOTES, 'UTF-8') ?>
                                 </a>
                             <?php else: ?>
@@ -173,7 +181,7 @@ ob_start();
         <?php foreach ($items as $item): ?>
             <?php $tileTag = in_array($collection, ['items', 'people'], true) ? 'a' : 'div'; ?>
             <?= '<' . $tileTag ?>
-                <?= in_array($collection, ['items', 'people'], true) ? 'href="' . htmlspecialchars(detailUrl((int) $item['id'], $collection), ENT_QUOTES, 'UTF-8') . '"' : '' ?>
+                <?= in_array($collection, ['items', 'people'], true) ? 'href="' . htmlspecialchars(rowLinkUrl((int) $item['id'], $collection), ENT_QUOTES, 'UTF-8') . '"' : '' ?>
                 class="tile <?= $item['flag'] ? 'tile-' . htmlspecialchars($item['flag'], ENT_QUOTES, 'UTF-8') : '' ?>">
                 <?php if (!empty($item['link_image'])): ?>
                     <img src="<?= htmlspecialchars($item['link_image'], ENT_QUOTES, 'UTF-8') ?>"
@@ -214,7 +222,7 @@ ob_start();
         <?php foreach ($items as $item): ?>
             <?php $cloudTag = in_array($collection, ['items', 'people'], true) ? 'a' : 'div'; ?>
             <?= '<' . $cloudTag ?>
-               <?= in_array($collection, ['items', 'people'], true) ? 'href="' . htmlspecialchars(detailUrl((int) $item['id'], $collection), ENT_QUOTES, 'UTF-8') . '"' : '' ?>
+               <?= in_array($collection, ['items', 'people'], true) ? 'href="' . htmlspecialchars(rowLinkUrl((int) $item['id'], $collection), ENT_QUOTES, 'UTF-8') . '"' : '' ?>
                class="cloud-dot <?= $item['flag'] ? 'dot-' . htmlspecialchars($item['flag'], ENT_QUOTES, 'UTF-8') : 'dot-none' ?>"
                data-id="<?= (int) $item['id'] ?>"
                data-rating="<?= $item['rating'] !== null ? (int) $item['rating'] : 50 ?>"
