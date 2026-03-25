@@ -1,19 +1,21 @@
 <?php
 /**
  * Create / Edit item form.
- * Variables: $item (array of field values), $errors (array of field => message)
+ * Variables: $item (array of field values), $errors (array of field => message), $collection, $formCategories
  */
 $isEdit    = isset($item['id']);
-$pageTitle = $isEdit ? 'Edit Item' : 'New Item';
+$isPeople  = $collection === 'people';
+$pageTitle = $isEdit ? ($isPeople ? 'Edit Person' : 'Edit Item') : ($isPeople ? 'New Person' : 'New Item');
 ob_start();
 ?>
 
-<h1><?= $isEdit ? 'Edit Item' : 'New Item' ?></h1>
+<h1><?= $isEdit ? ($isPeople ? 'Edit Person' : 'Edit Item') : ($isPeople ? 'New Person' : 'New Item') ?></h1>
 
 <form method="post"
       action="<?= $isEdit ? url('items/' . (int) $item['id']) : url('items') ?>"
       class="item-form" novalidate>
     <?= csrfField() ?>
+    <input type="hidden" name="collection" value="<?= htmlspecialchars($collection, ENT_QUOTES, 'UTF-8') ?>">
 
     <div class="form-group <?= isset($errors['item_name']) ? 'has-error' : '' ?>">
         <label for="item_name">Name *</label>
@@ -24,28 +26,44 @@ ob_start();
         <?php endif; ?>
     </div>
 
-    <div class="form-group">
-        <label for="author_name">Author</label>
-        <input type="text" id="author_name" name="author_name"
-               value="<?= htmlspecialchars($item['author_name'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
-    </div>
+    <?php if (!$isPeople): ?>
+        <div class="form-group">
+            <label for="author_name">Author</label>
+            <input type="text" id="author_name" name="author_name"
+                   value="<?= htmlspecialchars($item['author_name'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+        </div>
+    <?php endif; ?>
 
     <div class="form-group">
         <label for="category">Category</label>
-        <input type="text" id="category" name="category"
-               value="<?= htmlspecialchars($item['category'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
-               placeholder="music, book, art, film">
-    </div>
-
-    <div class="form-group <?= isset($errors['link']) ? 'has-error' : '' ?>">
-        <label for="link">Link</label>
-        <input type="url" id="link" name="link"
-               value="<?= htmlspecialchars($item['link'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
-               placeholder="https://…">
-        <?php if (isset($errors['link'])): ?>
-            <span class="error"><?= htmlspecialchars($errors['link'], ENT_QUOTES, 'UTF-8') ?></span>
+        <?php if ($isPeople): ?>
+            <select id="category" name="category">
+                <option value="">— Select category —</option>
+                <?php foreach ($formCategories as $category): ?>
+                    <option value="<?= htmlspecialchars($category, ENT_QUOTES, 'UTF-8') ?>"
+                        <?= ($item['category'] ?? '') === $category ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($category, ENT_QUOTES, 'UTF-8') ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        <?php else: ?>
+            <input type="text" id="category" name="category"
+                   value="<?= htmlspecialchars($item['category'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                   placeholder="music, book, art, film">
         <?php endif; ?>
     </div>
+
+    <?php if (!$isPeople): ?>
+        <div class="form-group <?= isset($errors['link']) ? 'has-error' : '' ?>">
+            <label for="link">Link</label>
+            <input type="url" id="link" name="link"
+                   value="<?= htmlspecialchars($item['link'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                   placeholder="https://…">
+            <?php if (isset($errors['link'])): ?>
+                <span class="error"><?= htmlspecialchars($errors['link'], ENT_QUOTES, 'UTF-8') ?></span>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
 
     <div class="form-group <?= isset($errors['link_image']) ? 'has-error' : '' ?>">
         <label for="link_image">Image Link</label>
@@ -56,7 +74,7 @@ ob_start();
             <?php if ($isEdit): ?>
                 <button type="submit"
                         class="btn"
-                        formaction="<?= url('items/' . (int) $item['id'] . '/replace-image') ?>"
+                        formaction="<?= $collection === 'items' ? url('items/' . (int) $item['id'] . '/replace-image') : url('items/' . (int) $item['id'] . '/replace-image') . '?collection=' . urlencode($collection) ?>"
                         formmethod="post">
                     Replace pic
                 </button>
@@ -67,39 +85,41 @@ ob_start();
         <?php endif; ?>
     </div>
 
-    <div class="form-group">
-        <label for="tags">Tags <small>(comma or semicolon separated)</small></label>
-        <input type="text" id="tags" name="tags"
-               value="<?= htmlspecialchars($item['tags'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
-               placeholder="music, painting, book">
-    </div>
+    <?php if (!$isPeople): ?>
+        <div class="form-group">
+            <label for="tags">Tags <small>(comma or semicolon separated)</small></label>
+            <input type="text" id="tags" name="tags"
+                   value="<?= htmlspecialchars($item['tags'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                   placeholder="music, painting, book">
+        </div>
 
-    <div class="form-group">
-        <label for="notes">Notes</label>
-        <textarea id="notes" name="notes" rows="4"><?= htmlspecialchars($item['notes'] ?? '', ENT_QUOTES, 'UTF-8') ?></textarea>
-    </div>
+        <div class="form-group">
+            <label for="notes">Notes</label>
+            <textarea id="notes" name="notes" rows="4"><?= htmlspecialchars($item['notes'] ?? '', ENT_QUOTES, 'UTF-8') ?></textarea>
+        </div>
 
-    <div class="form-group <?= isset($errors['rating']) ? 'has-error' : '' ?>">
-        <label for="rating">Rating <small>(1–100)</small></label>
-        <input type="number" id="rating" name="rating" min="1" max="100"
-               value="<?= htmlspecialchars((string)($item['rating'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
-        <?php if (isset($errors['rating'])): ?>
-            <span class="error"><?= htmlspecialchars($errors['rating'], ENT_QUOTES, 'UTF-8') ?></span>
-        <?php endif; ?>
-    </div>
+        <div class="form-group <?= isset($errors['rating']) ? 'has-error' : '' ?>">
+            <label for="rating">Rating <small>(1–100)</small></label>
+            <input type="number" id="rating" name="rating" min="1" max="100"
+                   value="<?= htmlspecialchars((string)($item['rating'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+            <?php if (isset($errors['rating'])): ?>
+                <span class="error"><?= htmlspecialchars($errors['rating'], ENT_QUOTES, 'UTF-8') ?></span>
+            <?php endif; ?>
+        </div>
 
-    <div class="form-group">
-        <label for="flag">Flag</label>
-        <select id="flag" name="flag">
-            <option value="">— None —</option>
-            <option value="revisit"   <?= ($item['flag'] ?? '') === 'revisit'   ? 'selected' : '' ?>>Revisit</option>
-            <option value="completed" <?= ($item['flag'] ?? '') === 'completed' ? 'selected' : '' ?>>Completed</option>
-        </select>
-    </div>
+        <div class="form-group">
+            <label for="flag">Flag</label>
+            <select id="flag" name="flag">
+                <option value="">— None —</option>
+                <option value="revisit"   <?= ($item['flag'] ?? '') === 'revisit'   ? 'selected' : '' ?>>Revisit</option>
+                <option value="completed" <?= ($item['flag'] ?? '') === 'completed' ? 'selected' : '' ?>>Completed</option>
+            </select>
+        </div>
+    <?php endif; ?>
 
     <div class="form-actions">
-        <button type="submit" class="btn btn-primary"><?= $isEdit ? 'Save Changes' : 'Create Item' ?></button>
-        <a href="<?= $isEdit ? url('items/' . (int) $item['id']) : url('items') ?>" class="btn">Cancel</a>
+        <button type="submit" class="btn btn-primary"><?= $isEdit ? 'Save Changes' : ($isPeople ? 'Create Person' : 'Create Item') ?></button>
+        <a href="<?= $isEdit ? ($collection === 'items' ? url('items/' . (int) $item['id']) : url('items/' . (int) $item['id']) . '?collection=' . urlencode($collection)) : ($collection === 'items' ? url('items') : url('items') . '?collection=' . urlencode($collection)) ?>" class="btn">Cancel</a>
     </div>
 </form>
 

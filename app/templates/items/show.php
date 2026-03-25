@@ -1,9 +1,10 @@
 <?php
 /**
  * Item detail view.
- * Variable: $item
+ * Variables: $item, $collection
  */
 $pageTitle = $item['item_name'];
+$isPeople = $collection === 'people';
 ob_start();
 ?>
 
@@ -16,14 +17,16 @@ ob_start();
             <?php endif; ?>
         </div>
         <div class="item-actions">
-            <a href="<?= url('items/' . (int) $item['id'] . '/edit') ?>" class="btn">Edit</a>
+            <a href="<?= $collection === 'items' ? url('items/' . (int) $item['id'] . '/edit') : url('items/' . (int) $item['id'] . '/edit') . '?collection=' . urlencode($collection) ?>" class="btn">Edit</a>
             <form method="post" action="<?= url('items/' . (int) $item['id'] . '/replace-image') ?>" class="inline-form">
                 <?= csrfField() ?>
+                <input type="hidden" name="collection" value="<?= htmlspecialchars($collection, ENT_QUOTES, 'UTF-8') ?>">
                 <button type="submit" class="btn">Replace pic</button>
             </form>
             <form method="post" action="<?= url('items/' . (int) $item['id'] . '/delete') ?>" class="inline-form"
                   onsubmit="return confirm('Delete this item?')">
                 <?= csrfField() ?>
+                <input type="hidden" name="collection" value="<?= htmlspecialchars($collection, ENT_QUOTES, 'UTF-8') ?>">
                 <button type="submit" class="btn btn-danger">Delete</button>
             </form>
         </div>
@@ -38,23 +41,27 @@ ob_start();
     <?php endif; ?>
 
     <dl class="detail-grid">
-        <dt>Author</dt>
-        <dd><?= htmlspecialchars($item['author_name'] ?? '', ENT_QUOTES, 'UTF-8') ?: '—' ?></dd>
+        <?php if (!$isPeople): ?>
+            <dt>Author</dt>
+            <dd><?= htmlspecialchars($item['author_name'] ?? '', ENT_QUOTES, 'UTF-8') ?: '—' ?></dd>
+        <?php endif; ?>
 
         <dt>Category</dt>
         <dd><?= htmlspecialchars($item['category'] ?? '', ENT_QUOTES, 'UTF-8') ?: '—' ?></dd>
 
-        <dt>Link</dt>
-        <dd>
-            <?php if ($item['link']): ?>
-                <a href="<?= htmlspecialchars($item['link'], ENT_QUOTES, 'UTF-8') ?>"
-                   target="_blank" rel="noopener">
-                    <?= htmlspecialchars($item['link'], ENT_QUOTES, 'UTF-8') ?>
-                </a>
-            <?php else: ?>
-                —
-            <?php endif; ?>
-        </dd>
+        <?php if (!$isPeople): ?>
+            <dt>Link</dt>
+            <dd>
+                <?php if ($item['link']): ?>
+                    <a href="<?= htmlspecialchars($item['link'], ENT_QUOTES, 'UTF-8') ?>"
+                       target="_blank" rel="noopener">
+                        <?= htmlspecialchars($item['link'], ENT_QUOTES, 'UTF-8') ?>
+                    </a>
+                <?php else: ?>
+                    —
+                <?php endif; ?>
+            </dd>
+        <?php endif; ?>
 
         <dt>Image Link</dt>
         <dd>
@@ -68,43 +75,45 @@ ob_start();
             <?php endif; ?>
         </dd>
 
-        <dt>Tags</dt>
-        <dd>
-            <?php if ($item['tags']): ?>
-                <?php foreach (explode(', ', $item['tags']) as $tag): ?>
-                    <span class="tag"><?= htmlspecialchars($tag, ENT_QUOTES, 'UTF-8') ?></span>
-                <?php endforeach; ?>
-            <?php else: ?>
-                —
-            <?php endif; ?>
-        </dd>
+        <?php if (!$isPeople): ?>
+            <dt>Tags</dt>
+            <dd>
+                <?php if ($item['tags']): ?>
+                    <?php foreach (explode(', ', $item['tags']) as $tag): ?>
+                        <span class="tag"><?= htmlspecialchars($tag, ENT_QUOTES, 'UTF-8') ?></span>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    —
+                <?php endif; ?>
+            </dd>
 
-        <dt>Rating</dt>
-        <dd><?= $item['rating'] !== null ? (int) $item['rating'] . ' / 100' : '—' ?></dd>
+            <dt>Rating</dt>
+            <dd><?= $item['rating'] !== null ? (int) $item['rating'] . ' / 100' : '—' ?></dd>
 
-        <dt>Flag</dt>
-        <dd>
-            <?php if ($item['flag']): ?>
-                <span class="flag flag-<?= htmlspecialchars($item['flag'], ENT_QUOTES, 'UTF-8') ?>">
-                    <?= htmlspecialchars($item['flag'], ENT_QUOTES, 'UTF-8') ?>
-                </span>
-            <?php else: ?>
-                —
-            <?php endif; ?>
-        </dd>
+            <dt>Flag</dt>
+            <dd>
+                <?php if ($item['flag']): ?>
+                    <span class="flag flag-<?= htmlspecialchars($item['flag'], ENT_QUOTES, 'UTF-8') ?>">
+                        <?= htmlspecialchars($item['flag'], ENT_QUOTES, 'UTF-8') ?>
+                    </span>
+                <?php else: ?>
+                    —
+                <?php endif; ?>
+            </dd>
 
-        <dt>Notes</dt>
-        <dd class="notes"><?= nl2br(htmlspecialchars($item['notes'] ?? '', ENT_QUOTES, 'UTF-8')) ?: '—' ?></dd>
+            <dt>Notes</dt>
+            <dd class="notes"><?= nl2br(htmlspecialchars($item['notes'] ?? '', ENT_QUOTES, 'UTF-8')) ?: '—' ?></dd>
 
-        <dt>Created</dt>
-        <dd><?= htmlspecialchars($item['created_at'] ?? '', ENT_QUOTES, 'UTF-8') ?: '—' ?></dd>
+            <dt>Created</dt>
+            <dd><?= htmlspecialchars($item['created_at'] ?? '', ENT_QUOTES, 'UTF-8') ?: '—' ?></dd>
 
-        <dt>Updated</dt>
-        <dd><?= htmlspecialchars($item['updated_at'] ?? '', ENT_QUOTES, 'UTF-8') ?: '—' ?></dd>
+            <dt>Updated</dt>
+            <dd><?= htmlspecialchars($item['updated_at'] ?? '', ENT_QUOTES, 'UTF-8') ?: '—' ?></dd>
+        <?php endif; ?>
     </dl>
 </article>
 
-<a href="<?= url('items') ?>" class="btn">&larr; Back to list</a>
+<a href="<?= $collection === 'items' ? url('items') : url('items') . '?collection=' . urlencode($collection) ?>" class="btn">&larr; Back to list</a>
 
 <?php
 $content = ob_get_clean();

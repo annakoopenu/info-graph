@@ -23,6 +23,15 @@ function collectionUrl(string $targetCollection): string {
     return url('items') . '?' . http_build_query($params);
 }
 
+function detailUrl(int $id, string $collection, string $suffix = ''): string {
+    $path = 'items/' . $id . $suffix;
+    if ($collection === 'items') {
+        return url($path);
+    }
+
+    return url($path) . '?' . http_build_query(['collection' => $collection]);
+}
+
 ob_start();
 ?>
 
@@ -127,8 +136,8 @@ ob_start();
                                      class="item-thumb"
                                      loading="lazy">
                             <?php endif; ?>
-                            <?php if ($collection === 'items'): ?>
-                                <a href="<?= url('items/' . (int) $item['id']) ?>">
+                            <?php if (in_array($collection, ['items', 'people'], true)): ?>
+                                <a href="<?= detailUrl((int) $item['id'], $collection) ?>">
                                     <?= htmlspecialchars($item['item_name'], ENT_QUOTES, 'UTF-8') ?>
                                 </a>
                             <?php else: ?>
@@ -162,9 +171,9 @@ ob_start();
     <!-- ── TILES VIEW ─────────────────────────────────────────── -->
     <div class="tiles-grid">
         <?php foreach ($items as $item): ?>
-            <?php $tileTag = $collection === 'items' ? 'a' : 'div'; ?>
+            <?php $tileTag = in_array($collection, ['items', 'people'], true) ? 'a' : 'div'; ?>
             <?= '<' . $tileTag ?>
-                <?= $collection === 'items' ? 'href="' . htmlspecialchars(url('items/' . (int) $item['id']), ENT_QUOTES, 'UTF-8') . '"' : '' ?>
+                <?= in_array($collection, ['items', 'people'], true) ? 'href="' . htmlspecialchars(detailUrl((int) $item['id'], $collection), ENT_QUOTES, 'UTF-8') . '"' : '' ?>
                 class="tile <?= $item['flag'] ? 'tile-' . htmlspecialchars($item['flag'], ENT_QUOTES, 'UTF-8') : '' ?>">
                 <?php if (!empty($item['link_image'])): ?>
                     <img src="<?= htmlspecialchars($item['link_image'], ENT_QUOTES, 'UTF-8') ?>"
@@ -203,9 +212,9 @@ ob_start();
     <!-- ── CLOUD VIEW ─────────────────────────────────────────── -->
     <div class="cloud-container" id="cloud-container">
         <?php foreach ($items as $item): ?>
-            <?php $cloudTag = $collection === 'items' ? 'a' : 'div'; ?>
+            <?php $cloudTag = in_array($collection, ['items', 'people'], true) ? 'a' : 'div'; ?>
             <?= '<' . $cloudTag ?>
-               <?= $collection === 'items' ? 'href="' . htmlspecialchars(url('items/' . (int) $item['id']), ENT_QUOTES, 'UTF-8') . '"' : '' ?>
+               <?= in_array($collection, ['items', 'people'], true) ? 'href="' . htmlspecialchars(detailUrl((int) $item['id'], $collection), ENT_QUOTES, 'UTF-8') . '"' : '' ?>
                class="cloud-dot <?= $item['flag'] ? 'dot-' . htmlspecialchars($item['flag'], ENT_QUOTES, 'UTF-8') : 'dot-none' ?>"
                data-id="<?= (int) $item['id'] ?>"
                data-rating="<?= $item['rating'] !== null ? (int) $item['rating'] : 50 ?>"

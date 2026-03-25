@@ -274,6 +274,10 @@ class ItemRepository
 
     private function normalizeForStorage(array $data, array $overrides = []): array
     {
+        if ($this->collection === 'people') {
+            return $this->normalizePersonForStorage($data, $overrides);
+        }
+
         $item = [
             'item_id' => $overrides['id'] ?? ($data['id'] ?? $data['item_id'] ?? null),
             'item_name' => trim((string) ($data['item_name'] ?? '')),
@@ -290,6 +294,23 @@ class ItemRepository
         ];
 
         return array_filter($item, static fn($value): bool => $value !== '');
+    }
+
+    private function normalizePersonForStorage(array $data, array $overrides = []): array
+    {
+        $name = trim((string) ($data['item_name'] ?? $data['name'] ?? ''));
+        $image = trim((string) ($data['link_image'] ?? ''));
+        $category = trim((string) ($data['category'] ?? ''));
+        $categoryId = $this->categoryIdByName($category);
+
+        $record = [
+            'creator_p_id' => $overrides['id'] ?? ($data['id'] ?? $data['creator_p_id'] ?? null),
+            'name' => $name,
+            'category_id' => $categoryId > 0 ? $categoryId : null,
+            'link_image' => $image,
+        ];
+
+        return array_filter($record, static fn($value): bool => $value !== '' && $value !== null);
     }
 
     private function resolveRecordId(array $record, int $index): int
@@ -357,6 +378,31 @@ class ItemRepository
             return '';
         }
 
+        $this->loadCategoryMap();
+
+        return $this->categoryMap[$categoryId] ?? '';
+    }
+
+    private function categoryIdByName(string $categoryName): int
+    {
+        $categoryName = trim($categoryName);
+        if ($categoryName === '') {
+            return 0;
+        }
+
+        $this->loadCategoryMap();
+
+        foreach ($this->categoryMap as $id => $name) {
+            if ($this->lower($name) === $this->lower($categoryName)) {
+                return (int) $id;
+            }
+        }
+
+        return 0;
+    }
+
+    private function loadCategoryMap(): void
+    {
         if ($this->categoryMap === null) {
             $this->categoryMap = [];
             $path = dirname(__DIR__, 2) . '/info-graph-data/categories.json';
@@ -377,7 +423,5 @@ class ItemRepository
                 }
             }
         }
-
-        return $this->categoryMap[$categoryId] ?? '';
     }
 }

@@ -21,12 +21,8 @@ class ItemController
 
     public function index(array $params): void
     {
-        $collection = trim((string) ($_GET['collection'] ?? 'items'));
-        if (!in_array($collection, ['items', 'people', 'groups'], true)) {
-            $collection = 'items';
-        }
-
-        $repo = new ItemRepository(collectionDataFilePath($collection), $collection);
+        $collection = $this->currentCollection($_GET);
+        $repo = $this->repoForCollection($collection);
         $filters = [
             'search' => trim($_GET['search'] ?? ''),
             'tag'    => trim($_GET['tag'] ?? ''),
@@ -44,8 +40,10 @@ class ItemController
 
     public function show(array $params): void
     {
+        $collection = $this->currentCollection($_GET);
+        $repo = $this->repoForCollection($collection);
         $id   = (int) $params['id'];
-        $item = $this->repo->findById($id);
+        $item = $repo->findById($id);
 
         if (!$item) {
             http_response_code(404);
@@ -60,8 +58,10 @@ class ItemController
 
     public function create(array $params): void
     {
+        $collection = $this->currentCollection($_GET);
         $item   = ['item_name' => '', 'author_name' => '', 'category' => '', 'link' => '', 'link_image' => '', 'tags' => '', 'notes' => '', 'rating' => '', 'flag' => ''];
         $errors = [];
+        $formCategories = $collection === 'people' ? $this->repoForCollection('people')->allCategories() : [];
         require __DIR__ . '/../../templates/items/form.php';
     }
 
@@ -71,17 +71,20 @@ class ItemController
     {
         verifyCsrf();
 
+        $collection = $this->currentCollection($_POST);
+        $repo = $this->repoForCollection($collection);
         $data   = $this->sanitize($_POST);
         $errors = $this->validate($data);
 
         if ($errors) {
             $item = $data;
+            $formCategories = $collection === 'people' ? $this->repoForCollection('people')->allCategories() : [];
             require __DIR__ . '/../../templates/items/form.php';
             return;
         }
 
-        $id = $this->repo->create($data);
-        header('Location: ' . url('items/' . $id));
+        $id = $repo->create($data);
+        header('Location: ' . $this->collectionUrl('items/' . $id, $collection));
         exit;
     }
 
@@ -89,8 +92,10 @@ class ItemController
 
     public function edit(array $params): void
     {
+        $collection = $this->currentCollection($_GET);
+        $repo = $this->repoForCollection($collection);
         $id   = (int) $params['id'];
-        $item = $this->repo->findById($id);
+        $item = $repo->findById($id);
 
         if (!$item) {
             http_response_code(404);
@@ -99,6 +104,7 @@ class ItemController
         }
 
         $errors = [];
+        $formCategories = $collection === 'people' ? $this->repoForCollection('people')->allCategories() : [];
         require __DIR__ . '/../../templates/items/form.php';
     }
 
@@ -108,18 +114,21 @@ class ItemController
     {
         verifyCsrf();
 
+        $collection = $this->currentCollection($_POST);
+        $repo = $this->repoForCollection($collection);
         $id   = (int) $params['id'];
         $data   = $this->sanitize($_POST);
         $errors = $this->validate($data);
 
         if ($errors) {
             $item = array_merge($data, ['id' => $id]);
+            $formCategories = $collection === 'people' ? $this->repoForCollection('people')->allCategories() : [];
             require __DIR__ . '/../../templates/items/form.php';
             return;
         }
 
-        $this->repo->update($id, $data);
-        header('Location: ' . url('items/' . $id));
+        $repo->update($id, $data);
+        header('Location: ' . $this->collectionUrl('items/' . $id, $collection));
         exit;
     }
 
@@ -129,9 +138,11 @@ class ItemController
     {
         verifyCsrf();
 
+        $collection = $this->currentCollection($_POST);
+        $repo = $this->repoForCollection($collection);
         $id = (int) $params['id'];
-        $this->repo->delete($id);
-        header('Location: ' . url('items'));
+        $repo->delete($id);
+        header('Location: ' . $this->collectionUrl('items', $collection));
         exit;
     }
 
@@ -139,8 +150,10 @@ class ItemController
     {
         verifyCsrf();
 
+        $collection = $this->currentCollection($_POST);
+        $repo = $this->repoForCollection($collection);
         $id = (int) $params['id'];
-        $item = $this->repo->findById($id);
+        $item = $repo->findById($id);
 
         if (!$item) {
             http_response_code(404);
@@ -154,17 +167,17 @@ class ItemController
                 'type' => 'error',
                 'message' => 'No replacement image was found for this item.',
             ];
-            header('Location: ' . url('items/' . $id . '/edit'));
+            header('Location: ' . $this->collectionUrl('items/' . $id . '/edit', $collection));
             exit;
         }
 
-        $this->repo->update($id, array_merge($item, ['link_image' => $replacementUrl]));
+        $repo->update($id, array_merge($item, ['link_image' => $replacementUrl]));
         $_SESSION['flash'] = [
             'type' => 'success',
             'message' => 'Image replaced successfully.',
         ];
 
-        header('Location: ' . url('items/' . $id . '/edit'));
+        header('Location: ' . $this->collectionUrl('items/' . $id . '/edit', $collection));
         exit;
     }
 
@@ -199,6 +212,7 @@ class ItemController
     private function sanitize(array $post): array
     {
         return [
+            'collection'  => trim($post['collection'] ?? ''),
             'item_name'   => trim($post['item_name'] ?? ''),
             'author_name' => trim($post['author_name'] ?? ''),
             'category'    => trim($post['category'] ?? ''),
@@ -209,5 +223,29 @@ class ItemController
             'rating'      => trim($post['rating'] ?? ''),
             'flag'        => trim($post['flag'] ?? ''),
         ];
+    }
+
+    private function currentCollection(array $source): string
+    {
+        $collection = trim((string) ($source['collection'] ?? 'items'));
+        if (!in_array($collection, ['items', 'people', 'groups'], true)) {
+            return 'items';
+        }
+
+        return $collection;
+    }
+
+    private function repoForCollection(string $collection): ItemRepository
+    {
+        return new ItemRepository(collectionDataFilePath($collection), $collection);
+    }
+
+    private function collectionUrl(string $path, string $collection): string
+    {
+        if ($collection === 'items') {
+            return url($path);
+        }
+
+        return url($path) . '?' . http_build_query(['collection' => $collection]);
     }
 }
