@@ -172,6 +172,11 @@ class ItemRepository
         return array_values($categories);
     }
 
+    public function exportRecords(): array
+    {
+        return $this->loadRawRecords();
+    }
+
     private function loadItems(): array
     {
         return $this->normalizeRecords($this->loadRawRecords());

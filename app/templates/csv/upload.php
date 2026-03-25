@@ -51,8 +51,16 @@ ob_start();
         <small class="help-text">Export all current items as CSV.</small>
     </p>
     <p>
-        <a href="<?= url('export/json') ?>" class="btn">Download Original JSON</a>
-        <small class="help-text">Export the current items JSON file exactly as stored on disk.</small>
+        <a href="<?= url('export/json') ?>?collection=items" class="btn">Download Items JSON</a>
+        <small class="help-text">Export the current items dataset in the original items JSON structure.</small>
+    </p>
+    <p>
+        <a href="<?= url('export/json') ?>?collection=people" class="btn">Download People JSON</a>
+        <small class="help-text">Export the current people dataset in the original people JSON structure.</small>
+    </p>
+    <p>
+        <a href="<?= url('export/json') ?>?collection=groups" class="btn">Download Groups JSON</a>
+        <small class="help-text">Export the current groups dataset in the original groups JSON structure.</small>
     </p>
 </div>
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../csrf.php';
 require_once __DIR__ . '/../Services/CsvService.php';
+require_once __DIR__ . '/../Repositories/ItemRepository.php';
 
 class CsvController
 {
@@ -29,21 +30,21 @@ class CsvController
 
     public function exportJson(array $params): void
     {
-        $path = dataFilePath();
-        if (!is_file($path)) {
-            http_response_code(404);
-            echo 'JSON data file not found.';
-            return;
+        $collection = trim((string) ($_GET['collection'] ?? 'items'));
+        if (!in_array($collection, ['items', 'people', 'groups'], true)) {
+            $collection = 'items';
         }
 
-        $contents = file_get_contents($path);
-        if ($contents === false) {
-            throw new RuntimeException('Unable to read JSON export file.');
+        $repo = new ItemRepository(collectionDataFilePath($collection), $collection);
+        $records = $repo->exportRecords();
+        $json = json_encode($records, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($json === false) {
+            throw new RuntimeException('Unable to encode JSON export data.');
         }
 
         header('Content-Type: application/json; charset=UTF-8');
-        header('Content-Disposition: attachment; filename="info-graph-export.json"');
-        echo $contents;
+        header('Content-Disposition: attachment; filename="info-graph-' . $collection . '-export.json"');
+        echo $json . "\n";
         exit;
     }
 
