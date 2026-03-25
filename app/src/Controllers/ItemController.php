@@ -171,7 +171,7 @@ class ItemController
             exit;
         }
 
-        $repo->update($id, array_merge($item, ['link_image' => $replacementUrl]));
+        $repo->updateImage($id, $replacementUrl);
         $_SESSION['flash'] = [
             'type' => 'success',
             'message' => 'Image replaced successfully.',

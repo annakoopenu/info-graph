@@ -116,6 +116,34 @@ class ItemRepository
         $this->saveRecords($records);
     }
 
+    public function updateImage(int $id, string $linkImage): void
+    {
+        $records = $this->loadRawRecords();
+        $found = false;
+
+        foreach ($records as $index => $record) {
+            $recordId = $this->resolveRecordId($record, $index);
+            if ($recordId !== $id) {
+                continue;
+            }
+
+            $record['link_image'] = trim($linkImage);
+            if ($this->collection === 'items') {
+                $record['updated_at'] = date('c');
+            }
+
+            $records[$index] = $record;
+            $found = true;
+            break;
+        }
+
+        if (!$found) {
+            throw new RuntimeException('Item not found.');
+        }
+
+        $this->saveRecords($records);
+    }
+
     public function delete(int $id): void
     {
         $records = $this->loadRawRecords();
