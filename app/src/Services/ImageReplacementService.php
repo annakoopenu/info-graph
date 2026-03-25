@@ -19,7 +19,7 @@ class ImageReplacementService
         }
 
         foreach ($this->buildSearchQueries($item) as $query) {
-            $imageUrl = $this->searchWikipediaThumbnail($query);
+            $imageUrl = $this->searchWikipediaThumbnail($item, $query);
             if ($imageUrl !== null) {
                 return $imageUrl;
             }
@@ -76,7 +76,7 @@ class ImageReplacementService
         return null;
     }
 
-    private function searchWikipediaThumbnail(string $query): ?string
+    private function searchWikipediaThumbnail(array $item, string $query): ?string
     {
         $response = $this->fetchJson('https://en.wikipedia.org/w/api.php?' . http_build_query([
             'action' => 'query',
@@ -95,7 +95,10 @@ class ImageReplacementService
             return null;
         }
 
-        foreach ($response['query']['pages'] as $page) {
+        $pages = array_values(array_filter($response['query']['pages'], 'is_array'));
+        usort($pages, fn(array $left, array $right): int => $this->rankWikipediaPage($right, $item) <=> $this->rankWikipediaPage($left, $item));
+
+        foreach ($pages as $page) {
             $source = trim((string) ($page['thumbnail']['source'] ?? ''));
             if ($source !== '') {
                 return $source;
@@ -107,8 +110,8 @@ class ImageReplacementService
 
     private function preferredWikipediaTitles(array $item, string $title): array
     {
-        $titles = [$title];
         $itemName = trim((string) ($item['item_name'] ?? ''));
+        $titles = [];
 
         if ($this->isFilm($item)) {
             if ($itemName !== '') {
@@ -119,6 +122,8 @@ class ImageReplacementService
             $titles[] = $title . ' (film)';
             $titles[] = $title . ' (movie)';
         }
+
+        $titles[] = $title;
 
         return array_values(array_unique(array_filter(array_map('trim', $titles))));
     }
@@ -156,6 +161,47 @@ class ImageReplacementService
     {
         $category = trim((string) ($item['category'] ?? ''));
         return strcasecmp($category, 'film') === 0;
+    }
+
+    private function rankWikipediaPage(array $page, array $item): int
+    {
+        $score = 0;
+        $title = trim((string) ($page['title'] ?? ''));
+        $normalizedTitle = $this->normalizeTitle($title);
+        $normalizedItemName = $this->normalizeTitle(trim((string) ($item['item_name'] ?? '')));
+
+        if ($normalizedTitle === $normalizedItemName) {
+            $score += 40;
+        }
+
+        if ($normalizedItemName !== '' && str_starts_with($normalizedTitle, $normalizedItemName . ' (')) {
+            $score += 80;
+        }
+
+        if ($this->isFilm($item)) {
+            if (preg_match('/\(\d{4} film\)$/i', $title)) {
+                $score += 120;
+            } elseif (preg_match('/\((film|movie|tv series)\)$/i', $title)) {
+                $score += 90;
+            }
+
+            if (stripos($title, 'soundtrack') !== false || stripos($title, 'novel') !== false) {
+                $score -= 80;
+            }
+        }
+
+        if (!empty($page['thumbnail']['source'])) {
+            $score += 10;
+        }
+
+        return $score;
+    }
+
+    private function normalizeTitle(string $value): string
+    {
+        $value = trim($value);
+        $value = preg_replace('/\s+/', ' ', $value) ?? $value;
+        return function_exists('mb_strtolower') ? mb_strtolower($value) : strtolower($value);
     }
 
     private function fetchJson(string $url): ?array
