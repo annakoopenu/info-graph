@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>About The Alarms Analysis</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --surface: #ffffff;
+      --text: #162033;
+      --muted: #5b6880;
+      --border: #d9e1f0;
+      --accent: #2563eb;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: linear-gradient(180deg, #eef4ff 0%, var(--bg) 100%);
+      color: var(--text);
+      line-height: 1.7;
+    }
+    .wrap {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 36px 20px 48px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(37, 99, 235, 0.10);
+      padding: 28px;
+    }
+    h1 {
+      margin: 0 0 10px;
+      font-size: 42px;
+      line-height: 1.05;
+    }
+    h2 {
+      margin: 28px 0 10px;
+      font-size: 22px;
+    }
+    p {
+      margin: 0 0 14px;
+      color: var(--text);
+    }
+    .muted {
+      color: var(--muted);
+    }
+    code {
+      background: #eef4ff;
+      padding: 0.12em 0.35em;
+      border-radius: 6px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.95em;
+    }
+    ul {
+      margin: 0 0 16px 20px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>About The Alarms Analysis</h1>
+      <p class="muted">A short explanation of how the Haifa alarms dashboard was created.</p>
+
+      <h2>What I Did</h2>
+      <p>I took the raw alarms dataset from <code>alarms.json</code> and built a small Python analysis flow around it in <code>alarms.py</code>. The first step was to parse the file safely, including handling the malformed JSON shape that appeared in the source file.</p>
+
+      <p>Then I filtered the data to alarms related to Haifa by matching city names that contain <code>Haifa</code> or <code>חיפה</code>. From there I created a sub-dataset focused only on the relevant rows.</p>
+
+      <h2>How The Analysis Was Built</h2>
+      <ul>
+        <li>Convert Unix timestamps into Israel local time using <code>Asia/Jerusalem</code>.</li>
+        <li>Extract useful fields such as date, hour, weekday, and matched Haifa areas.</li>
+        <li>Create a filtered CSV for the Haifa subset.</li>
+        <li>Explode multi-area alarms so one event can be analyzed under each matching Haifa area.</li>
+        <li>Generate visual summaries by hour, by date and hour, and by daily timeline.</li>
+      </ul>
+
+      <h2>Interactive Page</h2>
+      <p>Finally, I generated <code>haifa_alarms.html</code>, a standalone HTML page that lets the user choose a Haifa area from a menu. By default it shows all areas together, and when an area is selected it redraws the graph to show the hourly alarm distribution for that area only.</p>
+
+      <p>The page also shows the date interval for the currently displayed data, so it is clear what period the graph refers to.</p>
+    </div>
+  </div>
+</body>
+</html>
