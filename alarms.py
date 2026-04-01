@@ -62,9 +62,23 @@ def write_dashboard(area_hour_counts: pd.DataFrame, output_path: Path) -> None:
     for area in area_hour_counts.columns:
         hourly_data[area] = area_hour_counts[area].astype(int).tolist()
 
+    date_ranges = {
+        "All areas": {
+            "start": area_df["date"].min().strftime("%d.%m.%Y"),
+            "end": area_df["date"].max().strftime("%d.%m.%Y"),
+        }
+    }
+    for area in area_hour_counts.columns:
+        area_dates = area_df.loc[area_df["area"] == area, "date"]
+        date_ranges[area] = {
+            "start": area_dates.min().strftime("%d.%m.%Y"),
+            "end": area_dates.max().strftime("%d.%m.%Y"),
+        }
+
     dashboard_payload = {
         "hours": list(range(24)),
         "series": hourly_data,
+        "date_ranges": date_ranges,
     }
 
     html = f"""<!doctype html>
@@ -170,7 +184,8 @@ def write_dashboard(area_hour_counts: pd.DataFrame, output_path: Path) -> None:
   <div class="wrap">
     <div class="card">
       <h1>Haifa Alarm Dashboard</h1>
-      <p>Choose an area to inspect the hourly alarm pattern. The graph starts with all Haifa areas combined.</p>
+      <p id="intervalText">The data refers to -</p>
+      <p style="margin-top: 8px;">Choose an area to inspect the hourly alarm pattern. The graph starts with all Haifa areas combined.</p>
 
       <div class="controls">
         <div class="control">
@@ -193,6 +208,7 @@ def write_dashboard(area_hour_counts: pd.DataFrame, output_path: Path) -> None:
     const payload = {json.dumps(dashboard_payload, ensure_ascii=False)};
     const select = document.getElementById("areaSelect");
     const chart = document.getElementById("chart");
+    const intervalText = document.getElementById("intervalText");
     const totalPill = document.getElementById("totalPill");
     const peakPill = document.getElementById("peakPill");
     const summary = document.getElementById("summary");
@@ -207,6 +223,7 @@ def write_dashboard(area_hour_counts: pd.DataFrame, output_path: Path) -> None:
 
     function render(area) {{
       const values = payload.series[area];
+      const dateRange = payload.date_ranges[area];
       const width = 980;
       const height = 420;
       const margin = {{ top: 30, right: 20, bottom: 60, left: 56 }};
@@ -220,6 +237,7 @@ def write_dashboard(area_hour_counts: pd.DataFrame, output_path: Path) -> None:
       const peakValue = Math.max(...values);
       const peakHour = values.indexOf(peakValue);
 
+      intervalText.textContent = `The data refers to ${{dateRange.start}} - ${{dateRange.end}}`;
       totalPill.textContent = `Total alarms: ${{total}}`;
       peakPill.textContent = `Peak hour: ${{String(peakHour).padStart(2, "0")}}:00 (${{peakValue}})`;
       summary.textContent = `Showing hourly alarm counts for ${{area}} across 24 hours.`;
