@@ -244,5 +244,11 @@
     "category_id": 3,
     "name": "Yorgos Lanthimos",
     "link_image": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/Yorgos_Lanthimos_Fantastic_Fest_2015-9972_%2827404717426%29.jpg/250px-Yorgos_Lanthimos_Fantastic_Fest_2015-9972_%2827404717426%29.jpg"
-  }
+  },
+  {
+    "creator_p_id": 42,
+    "category_id": 2,
+    "name": "Ремарк Эрих Мария",
+    "link_image": ""
+  }  
 ]
